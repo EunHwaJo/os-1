@@ -78,7 +78,7 @@ main(int argc, char const *argv[])
 		exit(EXIT_FAILURE) ;
 	}
 	// recieves string from user
-//	scanf("%s", buffer) ;
+	//scanf("%s", buffer) ;
 	
 	// testing file transmit
 	char sdbuf[500];
@@ -99,7 +99,7 @@ main(int argc, char const *argv[])
 	int i = 0;
 	int fsize;
 	while(i < 3) {
-		usleep(10);
+		sleep(1);
 		// id
 		if(i == 0) {
 			printf("passing id: %s\n", id);

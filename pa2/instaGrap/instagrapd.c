@@ -6,9 +6,9 @@
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
-char * id = 0x0;
-char * pw = 0x0;
-char * codes = 0x0;
+//char * id = 0x0;
+//char * pw = 0x0;
+//char * codes = 0x0;
 void
 child_proc(int conn)
 {	
@@ -17,7 +17,11 @@ child_proc(int conn)
 	char * data = 0x0, * orig = 0x0 ;
 	int len = 0 ;
 	int s ; // how many char comes : out of our control
-
+	char * id = 0x0;
+	char * pw = 0x0;
+	char * codes = 0x0;
+	printf("%s %s %s\n", id, pw, codes);
+	
 	// it repeatedly recieves data thru conn (new socket)
 	// here, recv is exactly same as read w/o last param
 	// we need to count how many char coming in
@@ -31,16 +35,26 @@ child_proc(int conn)
 		}
 		*/
 		if (id == 0x0) {
-			printf("id log: %d\n", s);
+			//printf("id log: %d\n", s);
 			id = strdup(buf);
+			continue;
 		}
-		else if (pw == 0x0) {
-			printf("pw log: %d\n", s);
+		
+		if (pw == 0x0) {
+			//printf("pw log: %d\n", s);
 			pw = strdup(buf);
+			continue;
 		}
-		else if (codes == 0x0)  {
+		if (codes == 0x0) {
 			printf("codes log: %d\n", s);
 			codes = strdup(buf);
+		}
+		else  {
+			printf("previous id : %s\n", id);
+			printf("input id : %s\n", buf);
+			if (strcmp(id, buf) == 0) printf("id matches\n");
+			else printf("wrong id\n");
+			break;
 		}
 		/*
 		else {
