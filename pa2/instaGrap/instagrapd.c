@@ -6,9 +6,13 @@
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
-//char * id = 0x0;
-//char * pw = 0x0;
-//char * codes = 0x0;
+
+char * id = 0x0;
+char * pw = 0x0;
+char * codes = 0x0;
+char * port = NULL;
+char * wport = NULL;
+char * wip = NULL;
 void
 child_proc(int conn)
 {	
@@ -17,14 +21,20 @@ child_proc(int conn)
 	char * data = 0x0, * orig = 0x0 ;
 	int len = 0 ;
 	int s ; // how many char comes : out of our control
-	char * id = 0x0;
-	char * pw = 0x0;
-	char * codes = 0x0;
-	printf("%s %s %s\n", id, pw, codes);
+	//char * id = 0x0;
+	//char * pw = 0x0;
+	//char * codes = 0x0;
+	printf("%s %s %s\n", id, pw, codes);	
 	
 	// it repeatedly recieves data thru conn (new socket)
 	// here, recv is exactly same as read w/o last param
 	// we need to count how many char coming in
+	
+	// address for worker
+	struct sockaddr_in waddr;
+	int worker_fd;
+
+
 	while ( (s = recv(conn, buf, 1023, 0)) > 0 ) {
 		printf("loop log\n");
 		buf[s] = 0x0 ;
@@ -39,6 +49,8 @@ child_proc(int conn)
 			id = strdup(buf);
 			continue;
 		}
+		
+		// else, realloc data..?
 		
 		if (pw == 0x0) {
 			//printf("pw log: %d\n", s);
@@ -67,23 +79,51 @@ child_proc(int conn)
 	}
 	// loop iterates until revc is 0, menaing connection closed, no more char is given
 	// print recieved data
-	printf(">%s\n", id) ;
-	printf(">%s\n", pw) ;
-	printf(">%s\n", codes) ;
+	printf(">>%s\n", id) ;
+	printf(">>%s\n", pw) ;
+	printf(">>%s\n", codes) ;
 	
-	orig = data ;
+	//orig = data ;
 	// len > 0 means recieves sth, 
 	// repeat sending the data to conn (socket which is bidirectional channel) -> read / write rold both operated
-	while (len > 0 && (s = send(conn, data, len, 0)) > 0) {
+	
+		
+	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(worker_fd <= 0) {
+		perror("worker socket failed : ");
+		exit(EXIT_FAILURE);
+	}
+	printf("log!!!!!\n");
+	memset(&waddr, '0', sizeof(waddr));
+	waddr.sin_family=AF_INET;
+	waddr.sin_port = htons(atoi(wport));
+	if(inet_pton(AF_INET, wip, &waddr.sin_addr) <= 0 ){
+		perror("inet_pton failed : ");
+		exit(EXIT_FAILURE);
+	}
+	len = strlen(codes);	
+	printf("len : %d ", len);
+	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
+		perror("connect failed : ");
+		exit(EXIT_FAILURE);
+	}
+
+	if (send(worker_fd, codes, len, 0) < 0) {
+		printf("pass error from instagrap -> worker\n");
+	}
+	/*while (len > 0 && (s = send(worker_fd, codes, len, 0)) > 0) {
+		printf("send code from here :\n>%s", id);
 		// send is same as recv logic
 		// but even for writing, we can't determnine amount of char
-		data += s ;	// ignore sent part,
+		id += s ;	// ignore sent part,
 		len -= s ;	// keep sending until len reaches 0
+		
 	}
+	*/
 	// notify it's all sent, shutdown writing channel
-	shutdown(conn, SHUT_WR) ;
-	if (orig != 0x0) 
-		free(orig) ;
+	shutdown(worker_fd, SHUT_WR) ;
+	//if (orig != 0x0) 
+		//free(orig) ;
 }
 
 int 
@@ -93,14 +133,35 @@ main(int argc, char const *argv[])
 	struct sockaddr_in address; 
 	int opt = 1; 
 	int addrlen = sizeof(address); 
-	
 	char buffer[1024] = {0}; 
+	char c;
+	char * ip_port = NULL;
+
+	while( ( c = getopt(argc, argv, "p:w:"))!= -1) {
+		switch(c) {
+			case 'p' : // port waiting for submitter
+				port = optarg;
+				break;
+			case 'w' : // ip and port going out for worker
+				ip_port = optarg;
+				break;
+			case '?' :
+				printf("Unkown flag: %d", optopt);
+				break;				
+		}
 	
+	}
+	wip = strtok(ip_port, ":");
+	ip_port = strtok(NULL, " ");
+	wport = ip_port;
+	
+	printf("port : %s wip : %s wport : %s\n", port, wip, wport);
 	// create socket file descriptor
 	// by using same socket, we can read & write
 	// first param : af_inet, internet protocol
 	// second param : connection type, TCP -> guarantee my messege is well delivered
 	// third param : protocol, 0 means IP
+
 	listen_fd = socket(AF_INET /*IPv4*/, SOCK_STREAM /*TCP*/, 0 /*IP*/) ;
 	if (listen_fd == 0)  { 
 		perror("socket failed : "); 
@@ -110,7 +171,8 @@ main(int argc, char const *argv[])
 	memset(&address, '0', sizeof(address)); 
 	address.sin_family = AF_INET; 
 	address.sin_addr.s_addr = INADDR_ANY /* the localhost*/ ;	// computer itself 
-	address.sin_port = htons(8123); 				// port in current pc, server!
+	//address.sin_port = htons(8123); 				// port in current pc, server!
+	address.sin_port = htons(atoi(port));
 
 	// bind listen fd socket to certain address "this computer", meaning peace server
 	// this is kind of welcoming channel
@@ -153,5 +215,6 @@ main(int argc, char const *argv[])
 			close(new_socket) ;
 		}
 	}
+	
 } 
 
