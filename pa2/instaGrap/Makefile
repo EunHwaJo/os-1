@@ -10,5 +10,5 @@ worker : worker.c
 	gcc -o worker worker.c
 
 clean:
-	rm -rf submitter instagrapd
+	rm -rf worker submitter instagrapd
 

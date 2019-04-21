@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <windows.h>
 
 void
 child_proc(int conn)
@@ -35,8 +34,17 @@ child_proc(int conn)
 	fclose(fp);
 
 	// run submitted test code
-	windows("gcc output.c");
-	windows("./a.out");
+	system("gcc -o output output.c");
+	system("./output > output.txt");
+	
+	// get output from executed log
+	*data = 0x0;
+	FILE * fp2;
+	fp2 = fopen("output.txt", "r");
+	while( fgets(buf, 1023, fp2) > 0 ) {
+		strcat(data, buf);
+	}
+	printf("%s\n", data);
 	
 }
 
@@ -89,6 +97,7 @@ main(int argc, char const *argv[])
 		else {
 			printf("close new socket\n");
 			close(new_socket);
+			break;
 		}
 	}
 }
