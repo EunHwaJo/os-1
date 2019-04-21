@@ -145,9 +145,11 @@ main(int argc, char const *argv[])
 		// -> multiple communication in single server becomes possible
 		if (fork() > 0) {
 			// reference to the socket is also copied to child
+			printf("fork () > 0, new socket\n");	
 			child_proc(new_socket) ;
 		}
 		else {
+			printf("close new socket\n");
 			close(new_socket) ;
 		}
 	}
