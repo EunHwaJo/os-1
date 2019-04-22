@@ -7,9 +7,9 @@
 #include <netinet/in.h> 
 #include <string.h> 
 
-char * id = 0x0;
-char * pw = 0x0;
-char * codes = 0x0;
+//char * id = 0x0;
+//char * pw = 0x0;
+//char * codes = 0x0;
 char * port = NULL;
 char * wport = NULL;
 char * wip = NULL;
@@ -21,9 +21,9 @@ child_proc(int conn)
 	char * data = 0x0, * orig = 0x0 ;
 	int len = 0 ;
 	int s ; // how many char comes : out of our control
-	//char * id = 0x0;
-	//char * pw = 0x0;
-	//char * codes = 0x0;
+	char * id = 0x0;
+	char * pw = 0x0;
+	char * codes = 0x0;
 	printf("%s %s %s\n", id, pw, codes);	
 	
 	// it repeatedly recieves data thru conn (new socket)
@@ -93,7 +93,6 @@ child_proc(int conn)
 		perror("worker socket failed : ");
 		exit(EXIT_FAILURE);
 	}
-	printf("log!!!!!\n");
 	memset(&waddr, '0', sizeof(waddr));
 	waddr.sin_family=AF_INET;
 	waddr.sin_port = htons(atoi(wport));
@@ -102,7 +101,6 @@ child_proc(int conn)
 		exit(EXIT_FAILURE);
 	}
 	len = strlen(codes);	
-	printf("len : %d ", len);
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
 		perror("connect failed : ");
 		exit(EXIT_FAILURE);
@@ -195,6 +193,7 @@ main(int argc, char const *argv[])
 		// if messege has come, accept operation run. 
 		// new socket is returned from accept operation
 		// real data transfer occurs here
+		// accept returns "the newest commer"
 		new_socket = accept(listen_fd, (struct sockaddr *) &address, (socklen_t*)&addrlen) ;
 
 		// if socket is negative value, it meanse there's some problems => ignore or terminate

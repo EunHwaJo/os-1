@@ -42,7 +42,7 @@ main(int argc, char const *argv[])
 				printf("Unknown flag : %d", optopt);
 				break;
 		}
-	//filename = argv[argc-1];
+	
 	strcpy(filename, argv[argc-1]);
 	ip = strtok(ip_port, ":");
 	ip_port = strtok(NULL, " ");
@@ -50,7 +50,6 @@ main(int argc, char const *argv[])
 	printf("ip_port : %s, ip : %s, port : %d\n", ip_port, ip, atoi(port));
 	printf("id : %s, pw : %s\n", id, pw);
 	printf("filename : %s\n", filename);
-
 
 
 	// also create socket
@@ -62,9 +61,9 @@ main(int argc, char const *argv[])
 
 	memset(&serv_addr, '0', sizeof(serv_addr)); 
 	serv_addr.sin_family = AF_INET; 
-	//serv_addr.sin_port = htons(8123);
 	serv_addr.sin_port = htons(atoi(port));
-
+	//serv_addr.sin_port = htons(8123);
+	
 	// arbitrary ip address. 127.0.0.1 means server itself (not necessarily itself) 
 	if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
 		perror("inet_pton failed : ") ; 
@@ -97,7 +96,7 @@ main(int argc, char const *argv[])
 	bzero(sdbuf, 500);
 	
 	int i = 0;
-	int fsize;
+	int fsize = 0;
 	while(i < 3) {
 		sleep(1);
 		// id
