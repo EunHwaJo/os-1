@@ -5,52 +5,78 @@
 #include <netinet/in.h>
 #include <string.h>
 
-void
+	void
 child_proc(int conn)
 {
 	char buf[1024];
 	char * data = 0x0, * orig = 0x0;
 	int len = 0;
 	int s;
+	char * codes = 0x0;
+	char * testcase = 0x0;
+	char * temp = 0x0;
 	printf("this is child process of worker\n");
+
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		printf("recv loop\n");
 		buf[s] = 0x0;
-		if (data == 0x0) {
+		temp = strdup(buf);
+		codes = strtok(temp, "|");
+		temp = strtok(NULL, " ");
+		testcase = temp;
+		printf("codes : %s\n", codes);
+		printf("testcase : %s\n", testcase);
+		/*if(codes == 0x0) {
+			codes = strdup(buf);
+		}
+		else if(codes != 0x0 && testcase == 0x0) {
+			testcase = strdup(buf);
+			codes = 0x0;
+			//testcase = 0x0;
+		}
+		printf("codes : %s\n", codes);
+		printf("testcase : %s\n", testcase);
+		*/		
+		/*	
+			if (data == 0x0) {
 			data = strdup(buf);
 			len = s;
-		} 
-		else {
+			} 
+			else {
 			data = realloc(data, len+s+1);
 			strncpy(data+len, buf, s);
 			len += s;	
-		}	
+			}
+		 */	
 	}
-	printf("data: %s\n", data);	
-
+	//printf("data: %s\n", data);	
+	
+	/*
 	FILE * fp;
 	fp = fopen("output.c", "w");
-	fprintf(fp, "%s", data);
+	fprintf(fp, "%s", codes);
 	fclose(fp);
-
+	*/
+	
+	/*
 	// run submitted test code
 	system("gcc -o output output.c");
 	system("./output > output.txt");
-	
+
 	// get output from executed log
-	*data = 0x0;
-	FILE * fp2;
-	fp2 = fopen("output.txt", "r");
-	while( fgets(buf, 1023, fp2) > 0 ) {
-		strcat(data, buf);
-	}
-	printf("%s\n", data);
-	
+	 *data = 0x0;
+	 FILE * fp2;
+	 fp2 = fopen("output.txt", "r");
+	 while( fgets(buf, 1023, fp2) > 0 ) {
+	 strcat(data, buf);
+	 }
+	 printf("%s\n", data);
+	 */
 }
 
 
 
-int
+	int
 main(int argc, char const *argv[])
 {
 	int listen_fd, new_socket;
@@ -61,7 +87,7 @@ main(int argc, char const *argv[])
 	char c;
 	char * port = 0x0;
 	printf("this is worker.c\n");
-	
+
 	//getopt
 	while( (c = getopt(argc, argv, "p:")) != -1) {
 		switch(c) {

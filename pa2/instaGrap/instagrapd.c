@@ -13,7 +13,9 @@
 char * port = NULL;
 char * wport = NULL;
 char * wip = NULL;
-void
+char ins[10][10] = {0x0, };
+
+	void
 child_proc(int conn)
 {	
 	// conn is socket
@@ -25,13 +27,11 @@ child_proc(int conn)
 	char * pw = 0x0;
 	char * codes = 0x0;
 	char * flag = "correct";
-	char * pw1 = "12345";
-	printf("%s %s %s\n", id, pw, codes);	
-	
+	int i = 0;
 	// it repeatedly recieves data thru conn (new socket)
 	// here, recv is exactly same as read w/o last param
 	// we need to count how many char coming in
-	
+
 	// address for worker
 	struct sockaddr_in waddr;
 	int worker_fd;
@@ -41,19 +41,19 @@ child_proc(int conn)
 		printf("loop log\n");
 		buf[s] = 0x0 ;
 		/*
-		if (data == 0x0) {
-			data = strdup(buf) ;	// string duplicate buf
-			len = s ;		//update length as s
-		}
-		*/
+		   if (data == 0x0) {
+		   data = strdup(buf) ;	// string duplicate buf
+		   len = s ;		//update length as s
+		   }
+		 */
 		if (id == 0x0) {
 			printf("id init : %s\n", buf);
 			id = strdup(buf);
 			continue;
 		}
-		
+
 		// else, realloc data..?
-		
+
 		if (pw == 0x0) {
 			printf("pw init : %s\n", buf);
 			pw = strdup(buf);
@@ -66,7 +66,7 @@ child_proc(int conn)
 		else  {
 			//printf("previous id : %s\n", id);
 			//printf("input id : %s\n", buf);
-			if (strcmp(pw1, buf) == 0) {
+			if (strcmp(pw, buf) == 0) {
 				printf("pw matches\n");
 				if(s = send(conn, flag, strlen(flag), 0) < 0) {
 					printf("return error\n");
@@ -77,20 +77,20 @@ child_proc(int conn)
 			else printf("wrong pw\n");
 		}
 		/*
-		else {
-			data = realloc(data, len + s + 1) ;	// if not first time, realloc for len+s+1 amount. building up messeges 
-			strncpy(data + len, buf, s) ;
-			data[len + s] = 0x0 ;
-			len += s ;
-		}
-		*/
+		   else {
+		   data = realloc(data, len + s + 1) ;	// if not first time, realloc for len+s+1 amount. building up messeges 
+		   strncpy(data + len, buf, s) ;
+		   data[len + s] = 0x0 ;
+		   len += s ;
+		   }
+		 */
 	}
 	// loop iterates until revc is 0, menaing connection closed, no more char is given
 	// print recieved data
 	printf("> %s\n", id) ;
 	printf("> %s\n", pw) ;
 	printf("> %s\n", codes) ;
-	
+
 	//orig = data ;
 	// len > 0 means recieves sth, 
 	// repeat sending the data to conn (socket which is bidirectional channel) -> read / write rold both operated
@@ -107,7 +107,8 @@ child_proc(int conn)
 		break;
 	}
 	shutdown(conn, SHUT_WR);
-		
+
+
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
@@ -122,31 +123,55 @@ child_proc(int conn)
 		perror("inet_pton failed : ");
 		exit(EXIT_FAILURE);
 	}
-	len = strlen(codes);	
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
 		perror("connect failed : ");
 		exit(EXIT_FAILURE);
 	}
+	// try token..
+	char temp_codes[1023] = {0x0, };
+	strcpy(temp_codes, codes);
 
+	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
+		for(i = 0; i < 10; i++) {
+			strcpy(temp_codes, codes);
+			strcat(temp_codes, "|");
+			strcat(temp_codes, ins[i]);
+			printf("strcat codes : %s\n", temp_codes);
+			if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
+				printf("concat code sending error\n");
+			}
+			else printf("concat code sent : %s\n", temp_codes);
+		}
+		/*
+		   for(i = 0; i < 10; i++) {
+	// send codes
 	if (send(worker_fd, codes, len, 0) < 0) {
-		printf("pass error from instagrap -> worker\n");
+	printf("passing codes error from instagrap -> worker\n");
 	}
-	/*while (len > 0 && (s = send(worker_fd, codes, len, 0)) > 0) {
-		printf("send code from here :\n>%s", id);
+	sleep(1);
+	// send n.in file
+	printf("ins[%d] :  %s", i,  ins[i]);
+	if (send(worker_fd, ins[i], strlen(ins[i]), 0) < 0) {
+	printf("passing ins[%d] error from instagrap -> worker\n", i);
+	}
+	}*/
+		/*while (len > 0 && (s = send(worker_fd, codes, len, 0)) > 0) {
+		  printf("send code from here :\n>%s", id);
 		// send is same as recv logic
 		// but even for writing, we can't determnine amount of char
 		id += s ;	// ignore sent part,
 		len -= s ;	// keep sending until len reaches 0
-		
-	}
-	*/
-	// notify it's all sent, shutdown writing channel
-	shutdown(worker_fd, SHUT_WR) ;
-	//if (orig != 0x0) 
+
+		}
+		 */
+		// notify it's all sent, shutdown writing channel
+		shutdown(worker_fd, SHUT_WR) ;
+		//if (orig != 0x0) 
 		//free(orig) ;
+	}
 }
 
-int 
+	int 
 main(int argc, char const *argv[]) 
 { 
 	int listen_fd, new_socket ; 
@@ -156,7 +181,10 @@ main(int argc, char const *argv[])
 	char buffer[1024] = {0}; 
 	char c;
 	char * ip_port = NULL;
+	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	int i = 0;
 
+	//getopt	
 	while( ( c = getopt(argc, argv, "p:w:"))!= -1) {
 		switch(c) {
 			case 'p' : // port waiting for submitter
@@ -169,25 +197,54 @@ main(int argc, char const *argv[])
 				printf("Unkown flag: %d", optopt);
 				break;				
 		}
-	
+
 	}
+	printf("argv[argc-1] : %s\n", argv[argc-1]);
+	strcat(dir, argv[argc-1]);
 	wip = strtok(ip_port, ":");
 	ip_port = strtok(NULL, " ");
 	wport = ip_port;
-	
-	printf("port : %s wip : %s wport : %s\n", port, wip, wport);
+
+	printf("port : %s wip : %s wport : %s, dir : %s\n", port, wip, wport, dir);
+
+	// read files from directory
+	char testcase[255] = {0x0, };
+	//strcpy(testcase, dir);
+	char casefile[10];
+	char temp[10] ={0x0, };
+	//char temp[10] = {0x0, };
+	for(i = 1; i <= 10; i++){
+		// initialize input, output files
+		FILE * cases;
+		strcpy(testcase, dir);
+		char casenum[5];
+		snprintf(casenum, sizeof(casenum), "%d", i);
+		strcat(testcase, casenum);
+		strcat(testcase, ".in");	// testcases/i.in
+		printf("testcase : %s\n", testcase);
+
+		cases = fopen(testcase, "r");
+		if(cases == NULL) {
+			printf("testcase file open fail\n");
+			return -1;
+		}
+		fgets(temp, 9, cases);		// read as string
+		strcpy(ins[i-1], temp);
+		printf("ins[%d] : %s\n", i-1, ins[i-1]);
+		fclose(cases);	
+	}
+
 	// create socket file descriptor
 	// by using same socket, we can read & write
 	// first param : af_inet, internet protocol
 	// second param : connection type, TCP -> guarantee my messege is well delivered
 	// third param : protocol, 0 means IP
-
 	listen_fd = socket(AF_INET /*IPv4*/, SOCK_STREAM /*TCP*/, 0 /*IP*/) ;
 	if (listen_fd == 0)  { 
 		perror("socket failed : "); 
 		exit(EXIT_FAILURE); 
 	}
-	
+
 	memset(&address, '0', sizeof(address)); 
 	address.sin_family = AF_INET; 
 	address.sin_addr.s_addr = INADDR_ANY /* the localhost*/ ;	// computer itself 
