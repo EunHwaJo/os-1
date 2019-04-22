@@ -50,7 +50,7 @@ child_proc(int conn)
 
 
 
-	int
+int
 main(int argc, char const *argv[])
 {
 	int listen_fd, new_socket;
@@ -59,15 +59,22 @@ main(int argc, char const *argv[])
 	int addrlen = sizeof(address);
 	char buffer[1024] = {0};
 	char c;
-
+	char * port = 0x0;
 	printf("this is worker.c\n");
+	
+	//getopt
+	while( (c = getopt(argc, argv, "p:")) != -1) {
+		switch(c) {
+			case 'p' : // port coming from
+				port = optarg; 
+		}
+	}
 
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd == 0) {
 		perror("socket failed : ");
 		exit(EXIT_FAILURE);
 	}	
-	char * port = "8234";
 	memset(&address, '0', sizeof(address));
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;

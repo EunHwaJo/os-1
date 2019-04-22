@@ -24,6 +24,8 @@ child_proc(int conn)
 	char * id = 0x0;
 	char * pw = 0x0;
 	char * codes = 0x0;
+	char * flag = "correct";
+	char * pw1 = "12345";
 	printf("%s %s %s\n", id, pw, codes);	
 	
 	// it repeatedly recieves data thru conn (new socket)
@@ -45,7 +47,7 @@ child_proc(int conn)
 		}
 		*/
 		if (id == 0x0) {
-			//printf("id log: %d\n", s);
+			printf("id init : %s\n", buf);
 			id = strdup(buf);
 			continue;
 		}
@@ -53,20 +55,26 @@ child_proc(int conn)
 		// else, realloc data..?
 		
 		if (pw == 0x0) {
-			//printf("pw log: %d\n", s);
+			printf("pw init : %s\n", buf);
 			pw = strdup(buf);
 			continue;
 		}
 		if (codes == 0x0) {
-			printf("codes log: %d\n", s);
+			printf("codes init : %s\n", buf);
 			codes = strdup(buf);
 		}
 		else  {
-			printf("previous id : %s\n", id);
-			printf("input id : %s\n", buf);
-			if (strcmp(id, buf) == 0) printf("id matches\n");
-			else printf("wrong id\n");
-			break;
+			//printf("previous id : %s\n", id);
+			//printf("input id : %s\n", buf);
+			if (strcmp(pw1, buf) == 0) {
+				printf("pw matches\n");
+				if(s = send(conn, flag, strlen(flag), 0) < 0) {
+					printf("return error\n");
+				}
+				printf("returned flag : %s\n", flag);
+				break; 
+			}
+			else printf("wrong pw\n");
 		}
 		/*
 		else {
@@ -79,20 +87,34 @@ child_proc(int conn)
 	}
 	// loop iterates until revc is 0, menaing connection closed, no more char is given
 	// print recieved data
-	printf(">>%s\n", id) ;
-	printf(">>%s\n", pw) ;
-	printf(">>%s\n", codes) ;
+	printf("> %s\n", id) ;
+	printf("> %s\n", pw) ;
+	printf("> %s\n", codes) ;
 	
 	//orig = data ;
 	// len > 0 means recieves sth, 
 	// repeat sending the data to conn (socket which is bidirectional channel) -> read / write rold both operated
-	
+	while(s = send(conn, id, strlen(id), 0) > 0) {
+		printf("sent back id\n");
+		break;
+	}	
+	while(s = send(conn, pw, strlen(pw), 0) > 0) {
+		printf("sent back pw\n");
+		break;
+	}
+	while(s = send(conn, codes, strlen(codes), 0) > 0) {
+		printf("sent back codes\n");
+		break;
+	}
+	shutdown(conn, SHUT_WR);
 		
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
 		exit(EXIT_FAILURE);
 	}
+
+	// write data to worker
 	memset(&waddr, '0', sizeof(waddr));
 	waddr.sin_family=AF_INET;
 	waddr.sin_port = htons(atoi(wport));
@@ -214,6 +236,4 @@ main(int argc, char const *argv[])
 			close(new_socket) ;
 		}
 	}
-	
-} 
-
+}

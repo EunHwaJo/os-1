@@ -25,8 +25,7 @@ main(int argc, char const *argv[])
 	char * pw = NULL;
 	char filename[20];
 	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
-	int lens[3] = {0x0, };
-
+	char buf[1024] = {0x0, };
 	// getopt
 	while(( c = getopt(argc, argv, "n:u:k:")) != -1)
 		switch(c) {
@@ -82,11 +81,7 @@ main(int argc, char const *argv[])
 	// testing file transmit
 	char sdbuf[500];
 	strcat(path, filename);
-	lens[0] = strlen(id);
-	lens[1] = strlen(pw);
-	printf("id length : %d, pw length : %d\n", lens[0], lens[1]);
 	//filename = "/home/sihyungyou/os/pa2/instaGrap/test.c";
-	//printf("client is sending %s to the server..\n", path);
 	
 	FILE * fs = fopen(path, "r");
 	if (fs == NULL){
@@ -97,22 +92,22 @@ main(int argc, char const *argv[])
 	
 	int i = 0;
 	int fsize = 0;
-	while(i < 3) {
-		sleep(1);
+	/*while(i < 3) {
+		// sleep(1);
 		// id
 		if(i == 0) {
-			printf("passing id: %s\n", id);
-			printf("length id: %d\n", lens[0]);
-			if(send(sock_fd, id, lens[0], 0) < 0) {
+			//printf("passing id: %s\n", id);
+			//printf("length id: %d\n", lens[0]);
+			if(send(sock_fd, id, strlen(id), 0) < 0) {
 				printf("id pass err!\n");
 			}
 			++i;
 		}
 		// pw
 		else if (i == 1) {	
-			printf("passing pw: %s\n", pw);
-			printf("length pw : %d\n", lens[1]);
-			if(send(sock_fd, pw, lens[1], 0) < 0) {
+			//printf("passing pw: %s\n", pw);
+			//printf("length pw : %d\n", lens[1]);
+			if(send(sock_fd, pw, strlen(pw), 0) < 0) {
 				printf("pw pass err!\n");
 			}
 			++i;
@@ -125,10 +120,51 @@ main(int argc, char const *argv[])
 					break;
 				}
 			//bzero(sdbuf, 500);
-			printf("fsize : %d\n", fsize);
+			//printf("fsize : %d\n", fsize);
 			}
-			printf("file %s from client was sent!\n", path);
+			printf("> file %s from client was sent!\n", path);
 			++i;
+		}
+	}*/
+	// test frequently request
+	while(1) {
+		sleep(1);
+		if (i == 0) {
+			if( send(sock_fd, id, strlen(id), 0) < 0) {
+				printf("id pass error\n");
+			}
+			printf("passed id : %s\n", id);
+			++i;
+		}
+		else if(i == 1) {
+			if( send(sock_fd, pw, strlen(pw), 0) < 0) {
+				printf("pw pass error\n");
+			}
+			printf("passed pw : %s\n", pw);
+			++i;
+		}
+		else if (i == 2) {
+			while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
+				if (send (sock_fd, sdbuf, fsize, 0) < 0) {
+					printf("stderr!\n");
+					break;
+				}
+			}
+			printf("> file %s from clinet was sent!\n", path);
+			++i;
+		}
+		else if (i > 2) {
+			printf("waiting for feedback..\n");
+			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
+				printf("requesting error\n");
+			}
+			printf("requesting again.. pw : %s\n", pw);
+			
+			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+				printf("recved feedback : %s\n", buf);
+				if ( strcmp(buf, "correct") == 0) break;
+				else continue;
+			}
 		}
 	}
 	printf("terminated loop!: %d\n", i);
@@ -157,7 +193,7 @@ main(int argc, char const *argv[])
 
 	shutdown(sock_fd, SHUT_WR) ;
 
-	char buf[1024] ;
+	//char buf[1024] ;
 	data = 0x0 ;
 	len = 0 ;
 	while ( (s = recv(sock_fd, buf, 1023, 0)) > 0 ) {
@@ -174,7 +210,7 @@ main(int argc, char const *argv[])
 		}
 
 	}
-	//printf(">%s\n", data); 
+	printf("> %s\n", data); 
 
 } 
 
