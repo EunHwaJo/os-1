@@ -9,7 +9,7 @@
 // for server.c, it recieves data and sned the data
 // for client.c, it send out the data and recieves data
 
-int 
+	int 
 main(int argc, char const *argv[]) 
 { 
 	struct sockaddr_in serv_addr; 
@@ -26,6 +26,12 @@ main(int argc, char const *argv[])
 	char filename[20];
 	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
 	char buf[1024] = {0x0, };
+	char sdbuf[500];
+	FILE * fs;
+	int i = 0;
+	int fsize = 0;
+	bzero(sdbuf, 500);
+
 	// getopt
 	while(( c = getopt(argc, argv, "n:u:k:")) != -1)
 		switch(c) {
@@ -41,7 +47,7 @@ main(int argc, char const *argv[])
 				printf("Unknown flag : %d", optopt);
 				break;
 		}
-	
+
 	strcpy(filename, argv[argc-1]);
 	ip = strtok(ip_port, ":");
 	ip_port = strtok(NULL, " ");
@@ -50,8 +56,17 @@ main(int argc, char const *argv[])
 	printf("id : %s, pw : %s\n", id, pw);
 	printf("filename : %s\n", filename);
 
+	strcat(path, filename);
+	fs = fopen(path, "r");
+	if (fs == NULL) {
+		printf("file open error, %s is not found\n", path);
+		exit(1);
+	}
 
-	// also create socket
+
+
+
+	// create socket
 	sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
 	if (sock_fd <= 0) {
 		perror("socket failed : ") ;
@@ -61,156 +76,97 @@ main(int argc, char const *argv[])
 	memset(&serv_addr, '0', sizeof(serv_addr)); 
 	serv_addr.sin_family = AF_INET; 
 	serv_addr.sin_port = htons(atoi(port));
-	//serv_addr.sin_port = htons(8123);
-	
-	// arbitrary ip address. 127.0.0.1 means server itself (not necessarily itself) 
+
 	if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
 		perror("inet_pton failed : ") ; 
 		exit(EXIT_FAILURE) ;
 	} 
-	// here, not binding but connection got executed
-	// os approach destination thru network and establish connection, and cascate connection to given socket
-	// so after that, we can read & write through socket
 	if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 		perror("connect failed : ") ;
 		exit(EXIT_FAILURE) ;
 	}
-	// recieves string from user
-	//scanf("%s", buffer) ;
-	
-	// testing file transmit
-	char sdbuf[500];
-	strcat(path, filename);
-	//filename = "/home/sihyungyou/os/pa2/instaGrap/test.c";
-	
-	FILE * fs = fopen(path, "r");
-	if (fs == NULL){
-		printf("file open error, %s is not found\n", path);
-		exit(1);
+	printf("new connection has been made\n");
+	if( send(sock_fd, id, strlen(id), 0) < 0) {
+		printf("id pass error\n");
 	}
-	bzero(sdbuf, 500);
-	
-	int i = 0;
-	int fsize = 0;
-	/*while(i < 3) {
-		// sleep(1);
-		// id
-		if(i == 0) {
-			//printf("passing id: %s\n", id);
-			//printf("length id: %d\n", lens[0]);
-			if(send(sock_fd, id, strlen(id), 0) < 0) {
-				printf("id pass err!\n");
-			}
-			++i;
-		}
-		// pw
-		else if (i == 1) {	
-			//printf("passing pw: %s\n", pw);
-			//printf("length pw : %d\n", lens[1]);
-			if(send(sock_fd, pw, strlen(pw), 0) < 0) {
-				printf("pw pass err!\n");
-			}
-			++i;
-		}
-		// codes
-		else if (i == 2) {
-			while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
-				if (send(sock_fd, sdbuf, fsize, 0) < 0) {
-					printf("stderr!\n");
-					break;
-				}
-			//bzero(sdbuf, 500);
-			//printf("fsize : %d\n", fsize);
-			}
-			printf("> file %s from client was sent!\n", path);
-			++i;
-		}
-	}*/
-	// test frequently request
-	while(1) {
-		sleep(1);
-		if (i == 0) {
-			if( send(sock_fd, id, strlen(id), 0) < 0) {
-				printf("id pass error\n");
-			}
-			printf("passed id : %s\n", id);
-			++i;
-		}
-		else if(i == 1) {
-			if( send(sock_fd, pw, strlen(pw), 0) < 0) {
-				printf("pw pass error\n");
-			}
-			printf("passed pw : %s\n", pw);
-			++i;
-		}
-		else if (i == 2) {
-			while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
-				if (send (sock_fd, sdbuf, fsize, 0) < 0) {
-					printf("stderr!\n");
-					break;
-				}
-			}
-			printf("> file %s from clinet was sent!\n", path);
-			++i;
-		}
-		else if (i > 2) {
-			printf("waiting for feedback..\n");
-			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
-				printf("requesting error\n");
-			}
-			printf("requesting again.. pw : %s\n", pw);
-			
-			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
-				printf("recved feedback : %s\n", buf);
-				if ( strcmp(buf, "correct") == 0) break;
-				else continue;
-			}
-		}
+	printf("passed id : %s\n", id);
+	sleep(1);
+	if( send(sock_fd, pw, strlen(pw), 0) < 0) {
+		printf("pw pass error\n");
 	}
-	printf("terminated loop!: %d\n", i);
-/*
+	printf("passed pw : %s\n", pw);
+	sleep(1);
+
 	while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
-		if(send(sock_fd, sdbuf, fsize, 0) < 0) {
+		printf("paased code : %s\n", sdbuf);
+		if (send (sock_fd, sdbuf, fsize, 0) < 0) {
 			printf("stderr!\n");
 			break;
 		}
-		bzero(sdbuf, 500);
 	}
-	printf("file %s form client was sent!\n", path);
-*/	
+	printf("> file %s from clinet was sent!\n", path);
+	//++i;
+	/*		else if (i > 2) {
+			printf("waiting for feedback..\n");
+			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
+			printf("requesting error\n");
+			}
+			printf("requesting again.. pw : %s\n", pw);
+
+			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+			printf("recved feedback : %s\n", buf);
+			if ( strcmp(buf, "correct") == 0) break;
+			else continue;
+			}
+			}
+	 */
+	shutdown(sock_fd, SHUT_WR);
+	++i;
+	fclose(fs);	
+	/*
+	   while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
+	   if(send(sock_fd, sdbuf, fsize, 0) < 0) {
+	   printf("stderr!\n");
+	   break;
+	   }
+	   bzero(sdbuf, 500);
+	   }
+	   printf("file %s form client was sent!\n", path);
+	 */	
 
 	// up to here
 	/*
-	data = buffer ;
-	len = strlen(buffer) ;
-	s = 0 ;
+	   data = buffer ;
+	   len = strlen(buffer) ;
+	   s = 0 ;
 	// transmit string to server and listen what server says
 	while (len > 0 && (s = send(sock_fd, data, len, 0)) > 0) {
-		data += s ;
-		len -= s ;
+	data += s ;
+	len -= s ;
 	}*/
-	
 
-	shutdown(sock_fd, SHUT_WR) ;
+
+	//shutdown(sock_fd, SHUT_WR) ;
 
 	//char buf[1024] ;
-	data = 0x0 ;
-	len = 0 ;
-	while ( (s = recv(sock_fd, buf, 1023, 0)) > 0 ) {
-		buf[s] = 0x0 ;
-		if (data == 0x0) {
-			data = strdup(buf) ;
-			len = s ;
-		}
-		else {
-			data = realloc(data, len + s + 1) ;
-			strncpy(data + len, buf, s) ;
-			data[len + s] = 0x0 ;
-			len += s ;
-		}
+	/*
+	   data = 0x0 ;
+	   len = 0 ;
+	   while ( (s = recv(sock_fd, buf, 1023, 0)) > 0 ) {
+	   buf[s] = 0x0 ;
+	   if (data == 0x0) {
+	   data = strdup(buf) ;
+	   len = s ;
+	   }
+	   else {
+	   data = realloc(data, len + s + 1) ;
+	   strncpy(data + len, buf, s) ;
+	   data[len + s] = 0x0 ;
+	   len += s ;
+	   }
 
-	}
-	printf("> %s\n", data); 
-
+	   }
+	   printf("> %s\n", data); 
+	 */
 } 
 

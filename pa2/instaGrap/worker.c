@@ -5,7 +5,13 @@
 #include <netinet/in.h>
 #include <string.h>
 
-	void
+//int pipes[2];
+/*
+using pipes, child_proc of listening socket becomes main
+so, in child of parent socket, make pipes connection -> fork (child pipe) 
+*/
+
+void
 child_proc(int conn)
 {
 	char buf[1024];
@@ -26,28 +32,7 @@ child_proc(int conn)
 		testcase = temp;
 		printf("codes : %s\n", codes);
 		printf("testcase : %s\n", testcase);
-		/*if(codes == 0x0) {
-			codes = strdup(buf);
-		}
-		else if(codes != 0x0 && testcase == 0x0) {
-			testcase = strdup(buf);
-			codes = 0x0;
-			//testcase = 0x0;
-		}
-		printf("codes : %s\n", codes);
-		printf("testcase : %s\n", testcase);
-		*/		
-		/*	
-			if (data == 0x0) {
-			data = strdup(buf);
-			len = s;
-			} 
-			else {
-			data = realloc(data, len+s+1);
-			strncpy(data+len, buf, s);
-			len += s;	
-			}
-		 */	
+		// now, run the code with stdin of testcase
 	}
 	//printf("data: %s\n", data);	
 	
@@ -76,7 +61,7 @@ child_proc(int conn)
 
 
 
-	int
+int
 main(int argc, char const *argv[])
 {
 	int listen_fd, new_socket;

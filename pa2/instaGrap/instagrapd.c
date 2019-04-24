@@ -14,8 +14,13 @@ char * port = NULL;
 char * wport = NULL;
 char * wip = NULL;
 char ins[10][10] = {0x0, };
+char * ids[20] = {0x0, };
+char * pws[20] = {0x0, };
+char * codes[20] = {0x0, };
+int flags[20] = {0, };		// to decide weather incoming data iss id, pw, or code
+int cnt = 0;			// for multiple submitter sharing ids/pws/codes array
 
-	void
+void
 child_proc(int conn)
 {	
 	// conn is socket
@@ -23,11 +28,11 @@ child_proc(int conn)
 	char * data = 0x0, * orig = 0x0 ;
 	int len = 0 ;
 	int s ; // how many char comes : out of our control
-	char * id = 0x0;
-	char * pw = 0x0;
-	char * codes = 0x0;
-	char * flag = "correct";
-	int i = 0;
+	//char * id = 0x0;
+	//char * pw = 0x0;
+	//char * codes = 0x0;
+	//char * flag = "correct";
+	//int i = 0;
 	// it repeatedly recieves data thru conn (new socket)
 	// here, recv is exactly same as read w/o last param
 	// we need to count how many char coming in
@@ -36,16 +41,51 @@ child_proc(int conn)
 	struct sockaddr_in waddr;
 	int worker_fd;
 
-
+	//++cnt;
+	// for each user (indexed by cnt), 1: id, 2: pw, 3: codes
+	printf("before loop : flags[%d] : %d\n", cnt, flags[cnt]);
+	while( (s = recv(conn, buf, 1023, 0)) > 0) {
+		flags[cnt]++;	
+		buf[s] = 0x0;
+		data = strdup(buf);
+	
+	
+		printf(" data : %s\n", data);
+		printf("cnt : %d, flags[%d] : %d\n", cnt, cnt, flags[cnt]);
+		if(flags[cnt] == 1) {
+			printf("now for id\n");
+			ids[cnt] = data;
+		}
+		else if ( flags[cnt] == 2) {
+			printf("now for pw\n");
+			pws[cnt] = data;
+			continue;
+		}
+		else if ( flags[cnt] == 3) {
+			printf("now for codes\n");
+			codes[cnt] = data;
+			continue;
+		}
+		else if (flags[cnt] > 3) {
+			//now keep asking for feedback
+			printf("asked feedback\n");
+		}
+	}
+	printf("ids[%d] : %s\n", cnt, ids[cnt]);
+	printf("pws[%d] : %s\n", cnt, pws[cnt]);
+	printf("codes[%d] : %s\n", cnt, codes[cnt]);
+	printf("end of child proc\n");
+	shutdown(conn, SHUT_WR);
+	/*
 	while ( (s = recv(conn, buf, 1023, 0)) > 0 ) {
 		printf("loop log\n");
 		buf[s] = 0x0 ;
-		/*
+		/
 		   if (data == 0x0) {
 		   data = strdup(buf) ;	// string duplicate buf
 		   len = s ;		//update length as s
 		   }
-		 */
+		/
 		if (id == 0x0) {
 			printf("id init : %s\n", buf);
 			id = strdup(buf);
@@ -76,24 +116,26 @@ child_proc(int conn)
 			}
 			else printf("wrong pw\n");
 		}
-		/*
+		/
 		   else {
 		   data = realloc(data, len + s + 1) ;	// if not first time, realloc for len+s+1 amount. building up messeges 
 		   strncpy(data + len, buf, s) ;
 		   data[len + s] = 0x0 ;
 		   len += s ;
 		   }
-		 */
-	}
+		 /
+	}*/
 	// loop iterates until revc is 0, menaing connection closed, no more char is given
 	// print recieved data
+/*
 	printf("> %s\n", id) ;
 	printf("> %s\n", pw) ;
 	printf("> %s\n", codes) ;
-
+*/
 	//orig = data ;
 	// len > 0 means recieves sth, 
 	// repeat sending the data to conn (socket which is bidirectional channel) -> read / write rold both operated
+	/*
 	while(s = send(conn, id, strlen(id), 0) > 0) {
 		printf("sent back id\n");
 		break;
@@ -106,9 +148,10 @@ child_proc(int conn)
 		printf("sent back codes\n");
 		break;
 	}
-	shutdown(conn, SHUT_WR);
+	*/
 
 
+/*	
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
@@ -142,6 +185,7 @@ child_proc(int conn)
 			}
 			else printf("concat code sent : %s\n", temp_codes);
 		}
+*/
 		/*
 		   for(i = 0; i < 10; i++) {
 	// send codes
@@ -165,13 +209,13 @@ child_proc(int conn)
 		}
 		 */
 		// notify it's all sent, shutdown writing channel
-		shutdown(worker_fd, SHUT_WR) ;
+		//shutdown(worker_fd, SHUT_WR) ;
 		//if (orig != 0x0) 
 		//free(orig) ;
-	}
+//	}
 }
 
-	int 
+int 
 main(int argc, char const *argv[]) 
 { 
 	int listen_fd, new_socket ; 
@@ -213,7 +257,7 @@ main(int argc, char const *argv[])
 	char casefile[10];
 	char temp[10] ={0x0, };
 	//char temp[10] = {0x0, };
-	for(i = 1; i <= 10; i++){
+	for(i = 1; i <= 10; i++) {
 		// initialize input, output files
 		FILE * cases;
 		strcpy(testcase, dir);
@@ -264,28 +308,23 @@ main(int argc, char const *argv[])
 		// listening for messege
 		// exchanging ip address focus because other many callers are waiting for responses. 
 		// and open another port for communication by which they can communicate "date". this is kind of a TCP protocol 
+		// increase cnt to ensure multiple submitter's id, pw, codes, arrays
+		
 		if (listen(listen_fd, 16 /* the size of waiting queue*/) < 0) { 
 			perror("listen failed : "); 
 			exit(EXIT_FAILURE); 
 		} 
 
-		// if messege has come, accept operation run. 
-		// new socket is returned from accept operation
-		// real data transfer occurs here
-		// accept returns "the newest commer"
 		new_socket = accept(listen_fd, (struct sockaddr *) &address, (socklen_t*)&addrlen) ;
 
-		// if socket is negative value, it meanse there's some problems => ignore or terminate
 		if (new_socket < 0) {
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		} 
 
-		// someone must be waiting for new comer, previous socket must be alive => create child. (fork) so parent still stays as listener
-		// -> multiple communication in single server becomes possible
 		if (fork() > 0) {
 			// reference to the socket is also copied to child
-			printf("fork () > 0, new socket\n");	
+			printf("new socket\n");	
 			child_proc(new_socket) ;
 		}
 		else {
