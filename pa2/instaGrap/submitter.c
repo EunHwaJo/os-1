@@ -81,47 +81,53 @@ main(int argc, char const *argv[])
 		perror("inet_pton failed : ") ; 
 		exit(EXIT_FAILURE) ;
 	} 
-	if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-		perror("connect failed : ") ;
-		exit(EXIT_FAILURE) ;
-	}
-	printf("new connection has been made\n");
-	if( send(sock_fd, id, strlen(id), 0) < 0) {
-		printf("id pass error\n");
-	}
-	printf("passed id : %s\n", id);
-	sleep(1);
-	if( send(sock_fd, pw, strlen(pw), 0) < 0) {
-		printf("pw pass error\n");
-	}
-	printf("passed pw : %s\n", pw);
-	sleep(1);
-
-	while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
-		printf("paased code : %s\n", sdbuf);
-		if (send (sock_fd, sdbuf, fsize, 0) < 0) {
-			printf("stderr!\n");
-			break;
+	// os approach destination thru network and establish connection, and cascate connection to given socket
+	// so after that, we can read & write through socket
+	while(1) {
+		if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+			perror("connect failed : ") ;
+			exit(EXIT_FAILURE) ;
 		}
-	}
-	printf("> file %s from clinet was sent!\n", path);
-	//++i;
-	/*		else if (i > 2) {
-			printf("waiting for feedback..\n");
-			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
-			printf("requesting error\n");
+		printf("new connection has been made\n");
+			if( send(sock_fd, id, strlen(id), 0) < 0) {
+				printf("id pass error\n");
 			}
-			printf("requesting again.. pw : %s\n", pw);
+			printf("passed id : %s\n", id);
+			sleep(1);
+			
+			if( send(sock_fd, pw, strlen(pw), 0) < 0) {
+				printf("pw pass error\n");
+			}
+			printf("passed pw : %s\n", pw);
+			sleep(1);
 
-			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
-			printf("recved feedback : %s\n", buf);
-			if ( strcmp(buf, "correct") == 0) break;
-			else continue;
+			while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
+				printf("paased code : %s\n", sdbuf);
+				if (send (sock_fd, sdbuf, fsize, 0) < 0) {
+					printf("stderr!\n");
+					break;
+				}
+			printf("> file %s from clinet was sent!\n", path);
 			}
-			}
-	 */
-	shutdown(sock_fd, SHUT_WR);
-	++i;
+			sleep(1);
+		/*		else if (i > 2) {
+				printf("waiting for feedback..\n");
+				if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
+				printf("requesting error\n");
+				}
+				printf("requesting again.. pw : %s\n", pw);
+
+				if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+				printf("recved feedback : %s\n", buf);
+				if ( strcmp(buf, "correct") == 0) break;
+				else continue;
+				}
+				}
+		 */
+		close(sock_fd);
+		shutdown(sock_fd, SHUT_WR);
+		++i;
+	}
 	fclose(fs);	
 	/*
 	   while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
