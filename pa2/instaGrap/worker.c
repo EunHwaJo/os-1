@@ -58,7 +58,6 @@ child_proc(int conn)
 	char * testcase = 0x0;
 	char * temp = 0x0;
 	pid_t child_pid;
-	int exit_code;
 	int result = 0;
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		printf("recv loop\n");
@@ -75,42 +74,38 @@ child_proc(int conn)
 		fp = fopen("output.c", "w");
 		fprintf(fp, "%s", codes);
 		fclose(fp);
-
+		
+		fp = fopen("testcase.txt", "w");
+		fprintf(fp, "%s", testcase);
+		fclose (fp);
+		system("gcc -o output output.c");
+		
 		if(pipe(pipes) != 0) {
 			perror("Error");
 			exit(1);
 		}
-
+		
 		child_pid = fork();
 		if(child_pid == 0) {
-			// child process
+			// parent process
 			// read stdin as a.out
-			printf("child pipe\n");
-			/*close(pipes[1]);
-			printf("tescase 2 : %s\n", testcase);
-			system("gcc output.c");
-			system("./a.out");
-			pipes[0] = open("a.out", O_RDONLY | O_CREAT, 0644);
-			dup2(pipes[0], 0);
-			if(read(pipes[0], testcase, sizeof(testcase)) == -1) {
-				printf("read error\n");
-				exit(1);
-			}*/
+			close(pipes[0]);
+			printf("parent pipe\n");
+			pipes[1] = open("testcase.txt", O_RDONLY | O_CREAT, 0644);
+			dup2(pipes[1], 0);
 		}	
 		else {
-			// parent process
+			// child process
 			// write stdout to file
-			printf("parent pipe\n");	
-			//close(pipes[0]);
-			system("gcc output.c");
-			int fd = open("square.out", O_WRONLY | O_CREAT, 0644);
-			dup2(fd, 1);
-			close(fd);
-			execl("./a.out", "3");
-			
+			close(pipes[1]);
+			printf("child pipe\n");
+			pipes[0] = open("output.out", O_WRONLY | O_CREAT, 0644);
+			dup2(pipes[0], 1);
+			close(pipes[0]);
+			execl("./output", "output", (char *) 0x0);
 		}
-		wait(&exit_code);
-		exit(0);
+		
+			
 	}
 	//printf("data: %s\n", data);	
 
