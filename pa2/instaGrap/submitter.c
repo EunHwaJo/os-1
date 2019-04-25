@@ -67,68 +67,92 @@ main(int argc, char const *argv[])
 
 
 	// create socket
-	sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
-	if (sock_fd <= 0) {
-		perror("socket failed : ") ;
-		exit(EXIT_FAILURE) ;
-	} 
+	/*sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
+	  if (sock_fd <= 0) {
+	  perror("socket failed : ") ;
+	  exit(EXIT_FAILURE) ;
+	  } 
 
-	memset(&serv_addr, '0', sizeof(serv_addr)); 
-	serv_addr.sin_family = AF_INET; 
-	serv_addr.sin_port = htons(atoi(port));
+	  memset(&serv_addr, '0', sizeof(serv_addr)); 
+	  serv_addr.sin_family = AF_INET; 
+	  serv_addr.sin_port = htons(atoi(port));
 
-	if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
-		perror("inet_pton failed : ") ; 
-		exit(EXIT_FAILURE) ;
-	} 
+	  if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+	  perror("inet_pton failed : ") ; 
+	  exit(EXIT_FAILURE) ;
+	  }*/ 
 	// os approach destination thru network and establish connection, and cascate connection to given socket
 	// so after that, we can read & write through socket
 	while(1) {
+
+		sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
+		if (sock_fd <= 0) {
+			perror("socket failed : ") ;
+			exit(EXIT_FAILURE) ;
+		} 
+
+		memset(&serv_addr, '0', sizeof(serv_addr)); 
+		serv_addr.sin_family = AF_INET; 
+		serv_addr.sin_port = htons(atoi(port));
+
+		if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+			perror("inet_pton failed : ") ; 
+			exit(EXIT_FAILURE) ;
+		} 
+
 		if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 			perror("connect failed : ") ;
 			exit(EXIT_FAILURE) ;
 		}
-		printf("new connection has been made\n");
+
+		if (i == 0) {
+			printf("new connection has been made\n");
 			if( send(sock_fd, id, strlen(id), 0) < 0) {
 				printf("id pass error\n");
 			}
 			printf("passed id : %s\n", id);
 			sleep(1);
-			
+			i++;
+		}
+
+		if (i == 1) {
 			if( send(sock_fd, pw, strlen(pw), 0) < 0) {
 				printf("pw pass error\n");
 			}
 			printf("passed pw : %s\n", pw);
 			sleep(1);
-
+			i++;
+		}
+		if (i == 2) {
 			while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
 				printf("paased code : %s\n", sdbuf);
 				if (send (sock_fd, sdbuf, fsize, 0) < 0) {
 					printf("stderr!\n");
 					break;
 				}
-			printf("> file %s from clinet was sent!\n", path);
+				printf("> file %s from clinet was sent!\n", path);
 			}
 			sleep(1);
-		/*		else if (i > 2) {
-				printf("waiting for feedback..\n");
-				if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
-				printf("requesting error\n");
-				}
-				printf("requesting again.. pw : %s\n", pw);
+			i++;
+			fclose(fs);
+		}
 
-				if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+		if (i > 2) {
+			printf("waiting for feedback..\n");
+			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
+				printf("requesting error\n");
+			}
+			printf("requesting again.. pw : %s\n", pw);
+
+			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
 				printf("recved feedback : %s\n", buf);
 				if ( strcmp(buf, "correct") == 0) break;
 				else continue;
-				}
-				}
-		 */
-		close(sock_fd);
+			}
+		}
+
 		shutdown(sock_fd, SHUT_WR);
-		++i;
 	}
-	fclose(fs);	
 	/*
 	   while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
 	   if(send(sock_fd, sdbuf, fsize, 0) < 0) {

@@ -20,7 +20,7 @@ char * codes[20] = {0x0, };
 int flags[20] = {0, };		// to decide weather incoming data iss id, pw, or code
 int cnt = 0;			// for multiple submitter sharing ids/pws/codes array
 
-void
+	void
 child_proc(int conn)
 {	
 	// conn is socket
@@ -31,8 +31,8 @@ child_proc(int conn)
 	//char * id = 0x0;
 	//char * pw = 0x0;
 	//char * codes = 0x0;
-	//char * flag = "correct";
-	//int i = 0;
+	char * flag = "correct";
+	int i = 0;
 	// it repeatedly recieves data thru conn (new socket)
 	// here, recv is exactly same as read w/o last param
 	// we need to count how many char coming in
@@ -40,16 +40,13 @@ child_proc(int conn)
 	// address for worker
 	struct sockaddr_in waddr;
 	int worker_fd;
-
-	//++cnt;
 	// for each user (indexed by cnt), 1: id, 2: pw, 3: codes
 	printf("before loop : flags[%d] : %d\n", cnt, flags[cnt]);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		flags[cnt]++;	
 		buf[s] = 0x0;
 		data = strdup(buf);
-	
-	
+
 		printf(" data : %s\n", data);
 		printf("cnt : %d, flags[%d] : %d\n", cnt, cnt, flags[cnt]);
 		if(flags[cnt] == 1) {
@@ -67,91 +64,25 @@ child_proc(int conn)
 			continue;
 		}
 		else if (flags[cnt] > 3) {
-			//now keep asking for feedback
 			printf("asked feedback\n");
+			if(strcmp(pws[0], buf) == 0) {
+				printf("pw matches\n");
+				if(s = send(conn, flag, strlen(flag), 0) < 0) {
+					printf("return error\n");
+				}
+				else printf("returned flag : %s\n", flag);
+				break;
+			}
+			else printf("wrong pw\n");
 		}
 	}
 	printf("ids[%d] : %s\n", cnt, ids[cnt]);
 	printf("pws[%d] : %s\n", cnt, pws[cnt]);
 	printf("codes[%d] : %s\n", cnt, codes[cnt]);
-	printf("end of child proc\n");
+	printf("=======end of child proc=======\n");
 	shutdown(conn, SHUT_WR);
-	/*
-	while ( (s = recv(conn, buf, 1023, 0)) > 0 ) {
-		printf("loop log\n");
-		buf[s] = 0x0 ;
-		/
-		   if (data == 0x0) {
-		   data = strdup(buf) ;	// string duplicate buf
-		   len = s ;		//update length as s
-		   }
-		/
-		if (id == 0x0) {
-			printf("id init : %s\n", buf);
-			id = strdup(buf);
-			continue;
-		}
-
-		// else, realloc data..?
-
-		if (pw == 0x0) {
-			printf("pw init : %s\n", buf);
-			pw = strdup(buf);
-			continue;
-		}
-		if (codes == 0x0) {
-			printf("codes init : %s\n", buf);
-			codes = strdup(buf);
-		}
-		else  {
-			//printf("previous id : %s\n", id);
-			//printf("input id : %s\n", buf);
-			if (strcmp(pw, buf) == 0) {
-				printf("pw matches\n");
-				if(s = send(conn, flag, strlen(flag), 0) < 0) {
-					printf("return error\n");
-				}
-				printf("returned flag : %s\n", flag);
-				break; 
-			}
-			else printf("wrong pw\n");
-		}
-		/
-		   else {
-		   data = realloc(data, len + s + 1) ;	// if not first time, realloc for len+s+1 amount. building up messeges 
-		   strncpy(data + len, buf, s) ;
-		   data[len + s] = 0x0 ;
-		   len += s ;
-		   }
-		 /
-	}*/
-	// loop iterates until revc is 0, menaing connection closed, no more char is given
-	// print recieved data
-/*
-	printf("> %s\n", id) ;
-	printf("> %s\n", pw) ;
-	printf("> %s\n", codes) ;
-*/
-	//orig = data ;
-	// len > 0 means recieves sth, 
-	// repeat sending the data to conn (socket which is bidirectional channel) -> read / write rold both operated
-	/*
-	while(s = send(conn, id, strlen(id), 0) > 0) {
-		printf("sent back id\n");
-		break;
-	}	
-	while(s = send(conn, pw, strlen(pw), 0) > 0) {
-		printf("sent back pw\n");
-		break;
-	}
-	while(s = send(conn, codes, strlen(codes), 0) > 0) {
-		printf("sent back codes\n");
-		break;
-	}
-	*/
 
 
-/*	
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
@@ -172,50 +103,23 @@ child_proc(int conn)
 	}
 	// try token..
 	char temp_codes[1023] = {0x0, };
-	strcpy(temp_codes, codes);
 
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
 		for(i = 0; i < 10; i++) {
-			strcpy(temp_codes, codes);
+			sleep(1);
+			strcpy(temp_codes, codes[0]);
 			strcat(temp_codes, "|");
 			strcat(temp_codes, ins[i]);
-			printf("strcat codes : %s\n", temp_codes);
 			if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
 				printf("concat code sending error\n");
 			}
 			else printf("concat code sent : %s\n", temp_codes);
 		}
-*/
-		/*
-		   for(i = 0; i < 10; i++) {
-	// send codes
-	if (send(worker_fd, codes, len, 0) < 0) {
-	printf("passing codes error from instagrap -> worker\n");
 	}
-	sleep(1);
-	// send n.in file
-	printf("ins[%d] :  %s", i,  ins[i]);
-	if (send(worker_fd, ins[i], strlen(ins[i]), 0) < 0) {
-	printf("passing ins[%d] error from instagrap -> worker\n", i);
-	}
-	}*/
-		/*while (len > 0 && (s = send(worker_fd, codes, len, 0)) > 0) {
-		  printf("send code from here :\n>%s", id);
-		// send is same as recv logic
-		// but even for writing, we can't determnine amount of char
-		id += s ;	// ignore sent part,
-		len -= s ;	// keep sending until len reaches 0
-
-		}
-		 */
-		// notify it's all sent, shutdown writing channel
 		//shutdown(worker_fd, SHUT_WR) ;
-		//if (orig != 0x0) 
-		//free(orig) ;
-//	}
 }
 
-int 
+	int 
 main(int argc, char const *argv[]) 
 { 
 	int listen_fd, new_socket ; 
@@ -227,7 +131,6 @@ main(int argc, char const *argv[])
 	char * ip_port = NULL;
 	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
 	int i = 0;
-
 	//getopt	
 	while( ( c = getopt(argc, argv, "p:w:"))!= -1) {
 		switch(c) {
@@ -302,18 +205,16 @@ main(int argc, char const *argv[])
 		perror("bind failed : "); 
 		exit(EXIT_FAILURE); 
 	} 
-
 	while (1) {
 		// my port is opened
 		// listening for messege
 		// exchanging ip address focus because other many callers are waiting for responses. 
 		// and open another port for communication by which they can communicate "date". this is kind of a TCP protocol 
 		// increase cnt to ensure multiple submitter's id, pw, codes, arrays
-		
 		if (listen(listen_fd, 16 /* the size of waiting queue*/) < 0) { 
 			perror("listen failed : "); 
 			exit(EXIT_FAILURE); 
-		} 
+		} else printf("mainlog\n"); 
 
 		new_socket = accept(listen_fd, (struct sockaddr *) &address, (socklen_t*)&addrlen) ;
 

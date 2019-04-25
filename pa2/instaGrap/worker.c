@@ -4,14 +4,50 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
-//int pipes[2];
 /*
-using pipes, child_proc of listening socket becomes main
-so, in child of parent socket, make pipes connection -> fork (child pipe) 
-*/
+   using pipes, child_proc of listening socket becomes main
+   so, in child of parent socket, make pipes connection -> fork (child pipe) 
+ */
+int pipes[2];
+/*
+int
+parent_pipe()
+{
+	printf("parent_pipe()\n");
+	char buf;
+	//stdout	
+	// close stdin	
+	close(pipes[0]);
 
+	int fd = open("./output", O_RDONLY | O_CREAT, 0644);
+	dup2(fd, 1);
+	read(fd, buf, sizeof(buf));
+	return atoi(buf);
+}*/
+/*
 void
+child_pipe(char * testcase)
+{
+	printf("child_pipe()\n");
+
+	// stdin	
+	// close stdout
+	close(pipes[1]);
+
+	int fd = open("output.c", O_WRONLY | O_CREAT, 0644);
+	dup2(fd, 0);
+	
+	system("gcc -o output output.c");
+	execl("./output", testcase);
+
+	wait(0x0);
+	
+}*/
+	void
 child_proc(int conn)
 {
 	char buf[1024];
@@ -21,8 +57,9 @@ child_proc(int conn)
 	char * codes = 0x0;
 	char * testcase = 0x0;
 	char * temp = 0x0;
-	printf("this is child process of worker\n");
-
+	pid_t child_pid;
+	int exit_code;
+	int result = 0;
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		printf("recv loop\n");
 		buf[s] = 0x0;
@@ -33,22 +70,51 @@ child_proc(int conn)
 		printf("codes : %s\n", codes);
 		printf("testcase : %s\n", testcase);
 		// now, run the code with stdin of testcase
+
+		FILE * fp;
+		fp = fopen("output.c", "w");
+		fprintf(fp, "%s", codes);
+		fclose(fp);
+
+		if(pipe(pipes) != 0) {
+			perror("Error");
+			exit(1);
+		}
+
+		child_pid = fork();
+		if(child_pid == 0) {
+			// child process
+			// read stdin as a.out
+			printf("child pipe\n");
+			/*close(pipes[1]);
+			printf("tescase 2 : %s\n", testcase);
+			system("gcc output.c");
+			system("./a.out");
+			pipes[0] = open("a.out", O_RDONLY | O_CREAT, 0644);
+			dup2(pipes[0], 0);
+			if(read(pipes[0], testcase, sizeof(testcase)) == -1) {
+				printf("read error\n");
+				exit(1);
+			}*/
+		}	
+		else {
+			// parent process
+			// write stdout to file
+			printf("parent pipe\n");	
+			//close(pipes[0]);
+			system("gcc output.c");
+			int fd = open("square.out", O_WRONLY | O_CREAT, 0644);
+			dup2(fd, 1);
+			close(fd);
+			execl("./a.out", "3");
+			
+		}
+		wait(&exit_code);
+		exit(0);
 	}
 	//printf("data: %s\n", data);	
-	
-	/*
-	FILE * fp;
-	fp = fopen("output.c", "w");
-	fprintf(fp, "%s", codes);
-	fclose(fp);
-	*/
-	
-	/*
-	// run submitted test code
-	system("gcc -o output output.c");
-	system("./output > output.txt");
 
-	// get output from executed log
+	/* get output from executed log
 	 *data = 0x0;
 	 FILE * fp2;
 	 fp2 = fopen("output.txt", "r");
@@ -61,7 +127,7 @@ child_proc(int conn)
 
 
 
-int
+	int
 main(int argc, char const *argv[])
 {
 	int listen_fd, new_socket;
