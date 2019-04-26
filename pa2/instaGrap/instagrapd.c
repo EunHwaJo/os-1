@@ -106,7 +106,7 @@ child_proc(int conn)
 
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
 		for(i = 0; i < 10; i++) {
-			sleep(1);
+			sleep(3);
 			strcpy(temp_codes, codes[0]);
 			strcat(temp_codes, "|");
 			strcat(temp_codes, ins[i]);

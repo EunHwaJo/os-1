@@ -59,6 +59,7 @@ child_proc(int conn)
 	char * temp = 0x0;
 	pid_t child_pid;
 	int result = 0;
+	char outputbuf[10];
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		printf("recv loop\n");
 		buf[s] = 0x0;
@@ -66,18 +67,19 @@ child_proc(int conn)
 		codes = strtok(temp, "|");
 		temp = strtok(NULL, " ");
 		testcase = temp;
-		printf("codes : %s\n", codes);
+		//printf("codes : %s\n", codes);
 		printf("testcase : %s\n", testcase);
 		// now, run the code with stdin of testcase
 
-		FILE * fp;
-		fp = fopen("output.c", "w");
-		fprintf(fp, "%s", codes);
-		fclose(fp);
+		FILE * codefile;
+		codefile = fopen("output.c", "w");
+		fprintf(codefile, "%s", codes);
+		fclose(codefile);
 		
-		fp = fopen("testcase.txt", "w");
-		fprintf(fp, "%s", testcase);
-		fclose (fp);
+		FILE * tcfile;
+		tcfile = fopen("testcase.txt", "w");
+		fprintf(tcfile, "%s", testcase);
+		fclose (tcfile);
 		system("gcc -o output output.c");
 		
 		if(pipe(pipes) != 0) {
@@ -104,8 +106,15 @@ child_proc(int conn)
 			close(pipes[0]);
 			execl("./output", "output", (char *) 0x0);
 		}
-		
-			
+		FILE * opf;
+		opf = fopen("output.out", "r");
+		while(fscanf(opf, "%s", outputbuf) > 0) {
+			printf("outputbuf: %s", outputbuf);
+			if( s = send(conn, outputbuf, strlen(outputbuf), 0) < 0) {
+				printf("return error\n'");
+			}	
+		}
+					
 	}
 	//printf("data: %s\n", data);	
 
