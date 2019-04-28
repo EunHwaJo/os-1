@@ -8,45 +8,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-/*
-   using pipes, child_proc of listening socket becomes main
-   so, in child of parent socket, make pipes connection -> fork (child pipe) 
- */
 int pipes[2];
-/*
-   int
-   parent_pipe()
-   {
-   printf("parent_pipe()\n");
-   char buf;
-//stdout	
-// close stdin	
-close(pipes[0]);
 
-int fd = open("./output", O_RDONLY | O_CREAT, 0644);
-dup2(fd, 1);
-read(fd, buf, sizeof(buf));
-return atoi(buf);
-}*/
-/*
-   void
-   child_pipe(char * testcase)
-   {
-   printf("child_pipe()\n");
-
-// stdin	
-// close stdout
-close(pipes[1]);
-
-int fd = open("output.c", O_WRONLY | O_CREAT, 0644);
-dup2(fd, 0);
-
-system("gcc -o output output.c");
-execl("./output", testcase);
-
-wait(0x0);
-
-}*/
 	void
 child_proc(int conn)
 {

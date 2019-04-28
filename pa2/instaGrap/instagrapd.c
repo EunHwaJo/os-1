@@ -36,6 +36,9 @@ child_proc(void* ptr)
 	int i = 0;
 	struct sockaddr_in waddr;
 	int worker_fd;
+	char temp_codes[1024] = {0x0, };
+	char * wdata ;
+	int k ;
 
 	printf("CHILD PROC cnt:  %d\n", cnt);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
@@ -101,7 +104,7 @@ child_proc(void* ptr)
 
 	}
 	shutdown(conn, SHUT_WR);
-
+/*
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
@@ -116,13 +119,22 @@ child_proc(void* ptr)
 		perror("inet_pton failed : ");
 		exit(EXIT_FAILURE);
 	}
-	// try token..
-	char temp_codes[1024] = {0x0, };
-	char * wdata ;
-	int k ;
-
+*/
 	for(i = 0; i < 10; i++) {
-		sleep(3);
+		worker_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if(worker_fd <= 0) {
+			perror("worker socket failed : ");
+			exit(EXIT_FAILURE);
+		}
+
+		// write data to worker
+		memset(&waddr, '0', sizeof(waddr));
+		waddr.sin_family=AF_INET;
+		waddr.sin_port = htons(atoi(wport));
+		if(inet_pton(AF_INET, wip, &waddr.sin_addr) <= 0 ){
+			perror("inet_pton failed : ");
+			exit(EXIT_FAILURE);
+		}
 		memset(temp_codes, 0, sizeof(temp_codes)) ;
 		if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
 			perror("connect failed?! : ");
