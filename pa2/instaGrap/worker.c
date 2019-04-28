@@ -14,38 +14,38 @@
  */
 int pipes[2];
 /*
-int
-parent_pipe()
-{
-	printf("parent_pipe()\n");
-	char buf;
-	//stdout	
-	// close stdin	
-	close(pipes[0]);
+   int
+   parent_pipe()
+   {
+   printf("parent_pipe()\n");
+   char buf;
+//stdout	
+// close stdin	
+close(pipes[0]);
 
-	int fd = open("./output", O_RDONLY | O_CREAT, 0644);
-	dup2(fd, 1);
-	read(fd, buf, sizeof(buf));
-	return atoi(buf);
+int fd = open("./output", O_RDONLY | O_CREAT, 0644);
+dup2(fd, 1);
+read(fd, buf, sizeof(buf));
+return atoi(buf);
 }*/
 /*
-void
-child_pipe(char * testcase)
-{
-	printf("child_pipe()\n");
+   void
+   child_pipe(char * testcase)
+   {
+   printf("child_pipe()\n");
 
-	// stdin	
-	// close stdout
-	close(pipes[1]);
+// stdin	
+// close stdout
+close(pipes[1]);
 
-	int fd = open("output.c", O_WRONLY | O_CREAT, 0644);
-	dup2(fd, 0);
-	
-	system("gcc -o output output.c");
-	execl("./output", testcase);
+int fd = open("output.c", O_WRONLY | O_CREAT, 0644);
+dup2(fd, 0);
 
-	wait(0x0);
-	
+system("gcc -o output output.c");
+execl("./output", testcase);
+
+wait(0x0);
+
 }*/
 	void
 child_proc(int conn)
@@ -63,76 +63,99 @@ child_proc(int conn)
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		printf("recv loop\n");
 		buf[s] = 0x0;
-		temp = strdup(buf);
-		codes = strtok(temp, "|");
-		temp = strtok(NULL, " ");
-		testcase = temp;
-		//printf("codes : %s\n", codes);
-		printf("testcase : %s\n", testcase);
-		// now, run the code with stdin of testcase
-
-		FILE * codefile;
-		codefile = fopen("output.c", "w");
-		fprintf(codefile, "%s", codes);
-		fclose(codefile);
-		
-		FILE * tcfile;
-		tcfile = fopen("testcase.txt", "w");
-		fprintf(tcfile, "%s", testcase);
-		fclose (tcfile);
-		system("gcc -o output output.c");
-		
-		if(pipe(pipes) != 0) {
-			perror("Error");
-			exit(1);
+		if (data == 0x0) {
+			data = strdup(buf) ;
+			len = s ;
 		}
-		
-		child_pid = fork();
-		if(child_pid == 0) {
-			// parent process
-			// read stdin as a.out
-			close(pipes[0]);
-			printf("parent pipe\n");
-			pipes[1] = open("testcase.txt", O_RDONLY | O_CREAT, 0644);
-			dup2(pipes[1], 0);
-		}	
 		else {
-			// child process
-			// write stdout to file
-			close(pipes[1]);
-			printf("child pipe\n");
-			pipes[0] = open("output.out", O_WRONLY | O_CREAT, 0644);
-			dup2(pipes[0], 1);
-			close(pipes[0]);
-			execl("./output", "output", (char *) 0x0);
+			data = realloc(data, len + s + 1) ;
+			strncpy(data + len, buf, s) ;
+			data[len + s] = 0x0 ;
+			len += s ;
 		}
-		FILE * opf;
-		opf = fopen("output.out", "r");
-		while(fscanf(opf, "%s", outputbuf) > 0) {
-			printf("outputbuf: %s", outputbuf);
-			if( s = send(conn, outputbuf, strlen(outputbuf), 0) < 0) {
-				printf("return error\n'");
-			}	
-		}
-					
 	}
-	//printf("data: %s\n", data);	
+	temp = strdup(data);
+	codes = strtok(temp, "|");
+	temp = strtok(NULL, " ");
+	testcase = temp;
+	//printf("codes : %s\n", codes);
+	printf("testcase : %s\n", testcase);
+	// now, run the code with stdin of testcase
 
-	/* get output from executed log
-	 *data = 0x0;
-	 FILE * fp2;
-	 fp2 = fopen("output.txt", "r");
-	 while( fgets(buf, 1023, fp2) > 0 ) {
-	 strcat(data, buf);
-	 }
-	 printf("%s\n", data);
-	 */
+	FILE * codefile;
+	codefile = fopen("output.c", "w");
+	if(codefile == NULL) {
+		printf("codefile error\n");
+		exit(1);
+	}
+	else fprintf(codefile, "%s", codes);
+	fclose(codefile);
+
+	FILE * tcfile;
+	tcfile = fopen("testcase.txt", "w");
+	if(tcfile == NULL) {
+		printf("tcfile error\n");
+		exit(1);
+	}
+	else fprintf(tcfile, "%s", testcase);
+	fclose (tcfile);
+
+	system("gcc -o output output.c");
+
+	if(pipe(pipes) != 0) {
+		perror("Error");
+		exit(1);
+	}
+
+	pipes[0] = open("testcase.txt", O_RDONLY | O_CREAT, 0644);
+	dup2(pipes[0], 0);
+	close(pipes[0]);
+
+	pipes[1] = open("output.out", O_WRONLY | O_CREAT, 0644);
+	dup2(pipes[1], 1);
+	close(pipes[1]);
+
+	execl("./output", "output", (char *) 0x0);
+
+	printf("execl log\n");
+
+	FILE * opf;
+	opf = fopen("output.out", "r");
+	if(opf == NULL){
+		printf("opf error : not opened!");
+		exit(1);
+	}
+
+	fscanf(opf, "%s", outputbuf) ; // assume there's no error
+	printf("outputbuf: %s", outputbuf);
+	fclose(opf);
+
+	len = strlen(outputbuf) ;
+	while (len > 0 && (s = send(conn, outputbuf, len, 0)) > 0) {
+		data += s ;
+		len -= s ;
+	}
+	shutdown(conn, SHUT_WR) ;
+	if(data != 0x0)
+		free(data) ;
 }
 
 
+//printf("data: %s\n", data);	
+
+/* get output from executed log
+ *data = 0x0;
+ FILE * fp2;
+ fp2 = fopen("output.txt", "r");
+ while( fgets(buf, 1023, fp2) > 0 ) {
+ strcat(data, buf);
+ }
+ printf("%s\n", data);
+ */
+
 
 	int
-main(int argc, char const *argv[])
+main(int argc, char *argv[])
 {
 	int listen_fd, new_socket;
 	struct sockaddr_in address;

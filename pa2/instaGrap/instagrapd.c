@@ -18,7 +18,7 @@ char ins[10][10] = {0x0, };
 char * ids[20] = {0x0, };
 char * pws[20] = {0x0, };
 char * codes[20] = {0x0, };
-int flags[20] = {0, };		// to decide weather incoming data iss id, pw, or code
+int flags[20] = {0, };		// to decide wether incoming data iss id, pw, or code
 int cnt = 0;			// for multiple submitter sharing ids/pws/codes array
 
 	void*
@@ -102,7 +102,7 @@ child_proc(void* ptr)
 	}
 	shutdown(conn, SHUT_WR);
 
-	/*
+	
 	   worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	   if(worker_fd <= 0) {
 	   perror("worker socket failed : ");
@@ -117,31 +117,60 @@ child_proc(void* ptr)
 	perror("inet_pton failed : ");
 	exit(EXIT_FAILURE);
 	}
-	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
-	perror("connect failed : ");
-	exit(EXIT_FAILURE);
-	}
-	// try token..
-	char temp_codes[1023] = {0x0, };
 
-	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
+	// try token..
+	char temp_codes[1024] = {0x0, };
+	char * wdata ;
+	int k ;
+	
 	for(i = 0; i < 10; i++) {
-	sleep(3);
+		sleep(3);
+		memset(temp_codes, 0, sizeof(temp_codes)) ;
+		if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
+			perror("connect failed?! : ");
+			exit(EXIT_FAILURE);
+		}
 	strcpy(temp_codes, codes[0]);
 	strcat(temp_codes, "|");
 	strcat(temp_codes, ins[i]);
-	if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
-	printf("concat code sending error\n");
+	
+	wdata = temp_codes ;
+	len = strlen(temp_codes) ;
+	k = 0; 
+	
+	while (len > 0 && (k = send(worker_fd, wdata, len, 0)) > 0) {
+		data += k ;
+		len -= k ;
 	}
-	else printf("concat code sent : %s\n", temp_codes);
+
+
+	shutdown(worker_fd, SHUT_WR) ;
+	
+	char wbuf[1024] ;
+	wdata = 0x0 ;
+	len = 0;
+	while ( (k = recv(worker_fd, wbuf, 1023, 0)) > 0 ) {
+		wbuf[k] = 0x0 ;
+		if (wdata == 0x0) {
+			wdata = strdup(wbuf) ;
+			len = k ;
+		}
+		else {
+			wdata = realloc(wdata, len + k + 1) ;
+			strncpy(wdata + len, wbuf, k) ;
+			wdata[len + k] = 0x0 ;
+			len += k ;
+		}
+
 	}
-	}
-	//shutdown(worker_fd, SHUT_WR) ;
-	 */
+	printf("\nshould be output from worker >%s\n", wdata); 	
+	 
+}
+
 }
 
 	int 
-main(int argc, char const *argv[]) 
+main(int argc, char *argv[]) 
 { 
 	int listen_fd, new_socket ; 
 	struct sockaddr_in address; 
@@ -150,7 +179,8 @@ main(int argc, char const *argv[])
 	char buffer[1024] = {0}; 
 	char c;
 	char * ip_port = NULL;
-	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+//	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	char dir[100] = "/home/s21700696/os-1/pa2/instaGrap/";
 	int i = 0;
 	//getopt	
 	while( ( c = getopt(argc, argv, "p:w:"))!= -1) {
