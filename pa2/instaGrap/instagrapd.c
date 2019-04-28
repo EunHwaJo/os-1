@@ -36,7 +36,7 @@ child_proc(void* ptr)
 	int i = 0;
 	struct sockaddr_in waddr;
 	int worker_fd;
-	
+
 	printf("CHILD PROC cnt:  %d\n", cnt);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
@@ -59,7 +59,7 @@ child_proc(void* ptr)
 	temp_id = strtok(data, "-");
 	temp_pw = strtok(NULL, "-");
 	temp_code = strtok(NULL, "-");
-	
+
 	printf("temp_id : %s\ntemp_pw : %s\ntemp_code :\n%s", temp_id, temp_pw, temp_code);
 
 
@@ -70,7 +70,7 @@ child_proc(void* ptr)
 		if( strcmp(temp_id, ids[i]) == 0) {
 			// if exist,
 			printf("login info exist\n");
-		
+
 			if( strcmp(temp_pw, pws[i]) == 0 ) {
 				// if id && pw both exist, meaning login available
 				printf("login success\n");
@@ -98,46 +98,45 @@ child_proc(void* ptr)
 		pws[cnt] = temp_pw;
 		codes[cnt] = temp_code;
 		cnt++;
-	
+
 	}
 	shutdown(conn, SHUT_WR);
 
-	/*
-	   worker_fd = socket(AF_INET, SOCK_STREAM, 0);
-	   if(worker_fd <= 0) {
-	   perror("worker socket failed : ");
-	   exit(EXIT_FAILURE);
-	   }
+	// now send to worker
+	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(worker_fd <= 0) {
+		perror("worker socket failed : ");
+		exit(EXIT_FAILURE);
+	}
 
 	// write data to worker
 	memset(&waddr, '0', sizeof(waddr));
 	waddr.sin_family=AF_INET;
 	waddr.sin_port = htons(atoi(wport));
 	if(inet_pton(AF_INET, wip, &waddr.sin_addr) <= 0 ){
-	perror("inet_pton failed : ");
-	exit(EXIT_FAILURE);
+		perror("inet_pton failed : ");
+		exit(EXIT_FAILURE);
 	}
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
-	perror("connect failed : ");
-	exit(EXIT_FAILURE);
+		perror("connect failed : ");
+		exit(EXIT_FAILURE);
 	}
 	// try token..
 	char temp_codes[1023] = {0x0, };
 
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
-	for(i = 0; i < 10; i++) {
-	sleep(3);
-	strcpy(temp_codes, codes[0]);
-	strcat(temp_codes, "|");
-	strcat(temp_codes, ins[i]);
-	if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
-	printf("concat code sending error\n");
-	}
-	else printf("concat code sent : %s\n", temp_codes);
-	}
+		for(i = 0; i < 10; i++) {
+			sleep(3);
+			strcpy(temp_codes, codes[0]);
+			strcat(temp_codes, "|");
+			strcat(temp_codes, ins[i]);
+			if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
+				printf("concat code sending error\n");
+			}
+			else printf("concat code sent : %s\n", temp_codes);
+		}
 	}
 	//shutdown(worker_fd, SHUT_WR) ;
-	 */
 }
 
 	int 
