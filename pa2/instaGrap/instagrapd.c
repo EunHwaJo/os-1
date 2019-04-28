@@ -40,49 +40,31 @@ child_proc(int conn)
 	// address for worker
 	struct sockaddr_in waddr;
 	int worker_fd;
-	// for each user (indexed by cnt), 1: id, 2: pw, 3: codes
-	printf("before loop : flags[%d] : %d\n", cnt, flags[cnt]);
+	printf("CHILD PROC\n");
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
-		flags[cnt]++;	
 		buf[s] = 0x0;
-		data = strdup(buf);
-
-		printf(" data : %s\n", data);
-		printf("cnt : %d, flags[%d] : %d\n", cnt, cnt, flags[cnt]);
-		if(flags[cnt] == 1) {
-			printf("now for id\n");
-			ids[cnt] = data;
+		if (data == 0x0) {
+			data = strdup(buf);
+			len = s;
 		}
-		else if ( flags[cnt] == 2) {
-			printf("now for pw\n");
-			pws[cnt] = data;
-			continue;
-		}
-		else if ( flags[cnt] == 3) {
-			printf("now for codes\n");
-			codes[cnt] = data;
-			continue;
-		}
-		else if (flags[cnt] > 3) {
-			printf("asked feedback\n");
-			if(strcmp(pws[0], buf) == 0) {
-				printf("pw matches\n");
-				if(s = send(conn, flag, strlen(flag), 0) < 0) {
-					printf("return error\n");
-				}
-				else printf("returned flag : %s\n", flag);
-				break;
-			}
-			else printf("wrong pw\n");
+		else {
+			data = realloc(data, len+s+1);
+			strncpy(data+len, buf, s);
+			data[len+s] = 0x0;
+			len += s;
 		}
 	}
-	printf("ids[%d] : %s\n", cnt, ids[cnt]);
-	printf("pws[%d] : %s\n", cnt, pws[cnt]);
-	printf("codes[%d] : %s\n", cnt, codes[cnt]);
-	printf("=======end of child proc=======\n");
+	strcat(data, "-");
+	printf("NEW DATA : %s\n", data);
+	// slice the string by token "-"
+	ids[0] = strtok(data, "-");
+	pws[0] = strtok(NULL, "-");
+	printf("data now is : %s\n", data);
+	codes[0] = strtok(NULL, "-");
+	printf("id : %s\npw : %s\ncodes : \n%s", ids[0], pws[0], codes[0]);
 	shutdown(conn, SHUT_WR);
 
-
+/*
 	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(worker_fd <= 0) {
 		perror("worker socket failed : ");
@@ -117,6 +99,7 @@ child_proc(int conn)
 		}
 	}
 		//shutdown(worker_fd, SHUT_WR) ;
+*/
 }
 
 	int 
