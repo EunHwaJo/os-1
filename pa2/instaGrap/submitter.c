@@ -10,7 +10,7 @@
 // for client.c, it send out the data and recieves data
 
 	int 
-main(int argc, char const *argv[]) 
+main(int argc, char *argv[]) 
 { 
 	struct sockaddr_in serv_addr; 
 	int sock_fd ;
@@ -24,7 +24,8 @@ main(int argc, char const *argv[])
 	char * port = NULL;
 	char * pw = NULL;
 	char filename[20];
-	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+//	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	char path[100] = "/home/s21700696/os-1/pa2/instaGrap/";
 	char buf[1024] = {0x0, };
 	char sdbuf[500];
 	FILE * fs;
@@ -88,7 +89,6 @@ main(int argc, char const *argv[])
 			perror("inet_pton failed : ") ; 
 			exit(EXIT_FAILURE) ;
 		} 
-
 		if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 			perror("connect failed : ") ;
 			exit(EXIT_FAILURE) ;
@@ -105,13 +105,13 @@ main(int argc, char const *argv[])
 			printf("sent info with : %s\n", new_buffer);
 		}
 		else  {
-			if (i == 5) break;
-			if ( send(sock_fd, new_buffer, strlen(new_buffer2), 0) < 0) {
+		//	if (i == 5) break;
+			if ( send(sock_fd, new_buffer, strlen(new_buffer), 0) < 0) {
 				printf("requesting error\n");
 				exit(0);
 			}
 			shutdown(sock_fd, SHUT_WR);
-			printf("sent request with : %s\n", new_buffer2);\
+			printf("sent request with : %s\n", new_buffer);
 
 			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
 				printf("recved feedback : %s\n", buf);
