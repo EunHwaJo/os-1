@@ -32,10 +32,11 @@ child_proc(void* ptr)
 	char * temp_pw = 0x0;
 	char * temp_code = 0x0;
 	char * flag = "correct";
+	char * wrong_flag = "reject";
 	int i = 0;
 	struct sockaddr_in waddr;
 	int worker_fd;
-
+	
 	printf("CHILD PROC cnt:  %d\n", cnt);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
@@ -50,20 +51,26 @@ child_proc(void* ptr)
 			len += s;
 		}
 	}
+	bzero(buf, 1024);
+
 	strcat(data, "-");
-	printf("NEW DATA : %s\n", data);
+	//printf("NEW DATA : %s\n", data);
 	// slice the string by token "-"
 	temp_id = strtok(data, "-");
 	temp_pw = strtok(NULL, "-");
 	temp_code = strtok(NULL, "-");
-/*
+	
+	printf("temp_id : %s\ntemp_pw : %s\ntemp_code :\n%s", temp_id, temp_pw, temp_code);
+
+
 	for(i = 0; i < 20; i++) {
-		printf("for log\n");
-		printf("temp_id : %s\n", temp_id);
-		printf("ids[%d] : %s\n",i, ids[i]);
+		//printf("for log\n");
+		//printf("temp_id : %s\n", temp_id);
+		//printf("ids[%d] : %s\n",i, ids[i]);
 		if( strcmp(temp_id, ids[i]) == 0) {
 			// if exist,
 			printf("login info exist\n");
+		
 			if( strcmp(temp_pw, pws[i]) == 0 ) {
 				// if id && pw both exist, meaning login available
 				printf("login success\n");
@@ -73,20 +80,26 @@ child_proc(void* ptr)
 				}
 				break;
 			}
+			else {
+				// id matches, but pw is wrong
+				printf("wrong pw\n");
+				if( send(conn, wrong_flag, strlen(wrong_flag), 0) < 0) {
+					printf("wrong feedback error\n");
+					exit(0);
+				}
+				break;
+			}
 		} 
-		else {
-			printf("else?\n");
-		}
 	}
 	// if doenst exist, store the input data
 	if (i == 20) {
-		ids[i] = temp_id;
-		pws[i] = temp_pw;
-		codes[i] = temp_code;
+		printf("stored!");
+		ids[cnt] = temp_id;
+		pws[cnt] = temp_pw;
+		codes[cnt] = temp_code;
 		cnt++;
 	
 	}
-*/
 	shutdown(conn, SHUT_WR);
 
 	/*
@@ -189,6 +202,11 @@ main(int argc, char const *argv[])
 		fclose(cases);	
 	}
 
+	for(i = 0; i < 20; i++) {
+		ids[i] = "0";
+		pws[i] = "0";
+		codes[i] = "0";
+	}
 	// create socket file descriptor
 	// by using same socket, we can read & write
 	// first param : af_inet, internet protocol
