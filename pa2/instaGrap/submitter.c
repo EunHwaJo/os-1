@@ -92,8 +92,6 @@ main(int argc, char const *argv[])
 	// os approach destination thru network and establish connection, and cascate connection to given socket
 	// so after that, we can read & write through socket
 	while(1) {
-
-		printf("new connection has been made\n");
 		sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
 		if (sock_fd <= 0) {
 			perror("socket failed : ") ;
@@ -113,69 +111,40 @@ main(int argc, char const *argv[])
 			perror("connect failed : ") ;
 			exit(EXIT_FAILURE) ;
 		}
-		/*
-		   if (i == 0) {
-		//printf("new connection has been made\n");
-		if( send(sock_fd, id, strlen(id), 0) < 0) {
-		printf("id pass error\n");
-		}
-		printf("passed id : %s\n", id);
-		//sleep(1);
-		i++;
-		continue;
-		}
-
-		if (i == 1) {
-		if( send(sock_fd, pw, strlen(pw), 0) < 0) {
-		printf("pw pass error\n");
-		}
-		printf("passed pw : %s\n", pw);
-		//sleep(1);
-		i++;
-		continue;
-		}
-		if (i == 2) {
-		while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {
-		printf("paased code : %s\n", sdbuf);
-		if (send (sock_fd, sdbuf, fsize, 0) < 0) {
-		printf("stderr!\n");
-		break;
-		}
-		printf("> file %s from clinet was sent!\n", path);
-		}
-		//sleep(1);
-		i++;
-		fclose(fs);
-		continue;
-		}
-		 */
+	
+		printf("new connection has been made\n");
 		if (i == 0) {
 			printf("sending all-concat id-pw-codes test\n");
 			if( send(sock_fd, new_buffer, strlen(new_buffer), 0) < 0) {
 				printf("sending error\n");
 				exit(0);
 			}
-			i++;
+			break;
 		}
-		/*
-		   if (i > 0) {
-		   printf("waiting for feedback..\n");
-		   if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
-		   printf("requesting error\n");
-		   }
-		   printf("requesting again.. pw : %s\n", pw);
+/*
+		else  {
+			if (i == 5) break;
+			printf("waiting for feedback..\n");
+			if ( send(sock_fd, new_buffer, strlen(new_buffer), 0) < 0) {
+				printf("requesting error\n");
+				exit(0);
+			}
+			printf("requesting again..\n");
 
-		   if ( s = recv(sock_fd, buf, 10, 0) > 0) {
-		   printf("recved feedback : %s\n", buf);
-		   if ( strcmp(buf, "correct") == 0) break;
-		   else continue;
-		   }
-		   }
-		 */
+			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+				printf("recved feedback : %s\n", buf);
+				if ( strcmp(buf, "correct") == 0) {
+					printf("logged in\n");
+				}
+				else {
+					printf("rejected\n");
+				}
+			}
+		}
+*/
 		printf("i is %d\n", i);
 		i++;
 		shutdown(sock_fd, SHUT_WR);
-		break;
 	}
 	/*
 	   while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {

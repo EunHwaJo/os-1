@@ -24,26 +24,19 @@ int cnt = 0;			// for multiple submitter sharing ids/pws/codes array
 	void*
 child_proc(void* ptr)
 {	int conn = *((int *) ptr);
-	//free(ptr);
-	// conn is socket
 	char buf[1024] ;
 	char * data = 0x0, * orig = 0x0 ;
 	int len = 0 ;
-	int s ; // how many char comes : out of our control
-	//char * id = 0x0;
-	//char * pw = 0x0;
-	//char * codes = 0x0;
+	int s ; 
+	char * temp_id = 0x0;
+	char * temp_pw = 0x0;
+	char * temp_code = 0x0;
 	char * flag = "correct";
 	int i = 0;
-	// it repeatedly recieves data thru conn (new socket)
-	// here, recv is exactly same as read w/o last param
-	// we need to count how many char coming in
-
-	// address for worker
 	struct sockaddr_in waddr;
 	int worker_fd;
+
 	printf("CHILD PROC cnt:  %d\n", cnt);
-	printf("conn : %d\n", conn);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
 		if (data == 0x0) {
@@ -60,10 +53,40 @@ child_proc(void* ptr)
 	strcat(data, "-");
 	printf("NEW DATA : %s\n", data);
 	// slice the string by token "-"
-	ids[cnt] = strtok(data, "-");
-	pws[cnt] = strtok(NULL, "-");
-	codes[cnt] = strtok(NULL, "-");
-	printf("ids[%d] : %s\npws[%d] : %s\ncodes[%d] : \n%s", cnt, ids[cnt], cnt, pws[cnt], cnt, codes[cnt]);
+	temp_id = strtok(data, "-");
+	temp_pw = strtok(NULL, "-");
+	temp_code = strtok(NULL, "-");
+/*
+	for(i = 0; i < 20; i++) {
+		printf("for log\n");
+		printf("temp_id : %s\n", temp_id);
+		printf("ids[%d] : %s\n",i, ids[i]);
+		if( strcmp(temp_id, ids[i]) == 0) {
+			// if exist,
+			printf("login info exist\n");
+			if( strcmp(temp_pw, pws[i]) == 0 ) {
+				// if id && pw both exist, meaning login available
+				printf("login success\n");
+				if( send(conn, flag, strlen(flag), 0) < 0) {
+					printf("feedback error\n");
+					exit(0);
+				}
+				break;
+			}
+		} 
+		else {
+			printf("else?\n");
+		}
+	}
+	// if doenst exist, store the input data
+	if (i == 20) {
+		ids[i] = temp_id;
+		pws[i] = temp_pw;
+		codes[i] = temp_code;
+		cnt++;
+	
+	}
+*/
 	shutdown(conn, SHUT_WR);
 
 	/*
@@ -218,16 +241,17 @@ main(int argc, char const *argv[])
 		//int * new_fd = malloc(sizeof(*new_fd));
 		//new_fd = new_socket;
 		pthread_t t1;
-		printf("new_ socket : %d\n", new_socket);
 		if ( pthread_create(&t1, NULL, child_proc,(void*) &new_socket) < 0) {
 			perror("thread create error!");
 			exit(0);
-		} else { 
-			cnt++;
 		}
-		/*else {
-		printf("close new socket\n");
-		close(new_socket) ;
-		}*/
+
+		pthread_join( t1, NULL);
+		/*
+		   else {
+		   printf("close new socket\n");
+		   close(new_socket) ;
+		   }
+		 */
 	}
 }
