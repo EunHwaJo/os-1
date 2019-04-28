@@ -59,9 +59,9 @@ child_proc(int conn)
 	char * temp = 0x0;
 	pid_t child_pid;
 	int result = 0;
-	char outputbuf[10];
+	char outputbuf[255];
+	
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
-		printf("recv loop\n");
 		buf[s] = 0x0;
 		if (data == 0x0) {
 			data = strdup(buf) ;
@@ -79,7 +79,6 @@ child_proc(int conn)
 	temp = strtok(NULL, " ");
 	testcase = temp;
 	//printf("codes : %s\n", codes);
-	printf("testcase : %s\n", testcase);
 	// now, run the code with stdin of testcase
 
 	FILE * codefile;
@@ -114,10 +113,14 @@ child_proc(int conn)
 	pipes[1] = open("output.out", O_WRONLY | O_CREAT, 0644);
 	dup2(pipes[1], 1);
 	close(pipes[1]);
-
-	execl("./output", "output", (char *) 0x0);
-
-	printf("execl log\n");
+	
+	child_pid = fork();
+	if (child_pid == 0) {
+		// child process
+		execl("./output", "output", (char *) 0x0);
+	}
+	// keep parent process
+	//execl("./output", "output", (char *) 0x0);
 
 	FILE * opf;
 	opf = fopen("output.out", "r");
@@ -125,19 +128,15 @@ child_proc(int conn)
 		printf("opf error : not opened!");
 		exit(1);
 	}
-
-	fscanf(opf, "%s", outputbuf) ; // assume there's no error
-	printf("outputbuf: %s", outputbuf);
+	sleep(1); 
+	fscanf(opf, "%s", outputbuf);
 	fclose(opf);
 
-	len = strlen(outputbuf) ;
-	while (len > 0 && (s = send(conn, outputbuf, len, 0)) > 0) {
-		data += s ;
-		len -= s ;
+	if ( send(conn, outputbuf, strlen(outputbuf), 0) < 0) {
+		printf("send output back error\n");
+		exit(1);
 	}
 	shutdown(conn, SHUT_WR) ;
-	if(data != 0x0)
-		free(data) ;
 }
 
 
@@ -189,24 +188,20 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}	
 	while(1) {
-		printf("while\n");
 		if (listen(listen_fd, 16) < 0) {
 			perror("listen failed : ");
 			exit(EXIT_FAILURE);
 		}
 
 		new_socket = accept(listen_fd, (struct sockaddr *) &address, (socklen_t*)&addrlen);
-		printf("new socket log\n");
 		if (new_socket < 0) {
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
 		if (fork () > 0) {
-			printf("fork success!\n");
 			child_proc(new_socket);
 		}
 		else {
-			printf("close new socket\n");
 			close(new_socket);
 			break;
 		}

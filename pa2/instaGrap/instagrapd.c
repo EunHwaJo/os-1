@@ -176,8 +176,8 @@ main(int argc, char *argv[])
 	char buffer[1024] = {0}; 
 	char c;
 	char * ip_port = NULL;
-	//	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
-	char dir[100] = "/home/s21700696/os-1/pa2/instaGrap/";
+	char dir[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	//char dir[100] = "/home/s21700696/os-1/pa2/instaGrap/";
 	int i = 0;
 	//getopt	
 	while( ( c = getopt(argc, argv, "p:w:"))!= -1) {

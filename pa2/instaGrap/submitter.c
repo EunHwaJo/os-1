@@ -24,8 +24,8 @@ main(int argc, char *argv[])
 	char * port = NULL;
 	char * pw = NULL;
 	char filename[20];
-//	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
-	char path[100] = "/home/s21700696/os-1/pa2/instaGrap/";
+	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	//char path[100] = "/home/s21700696/os-1/pa2/instaGrap/";
 	char buf[1024] = {0x0, };
 	char sdbuf[500];
 	FILE * fs;
