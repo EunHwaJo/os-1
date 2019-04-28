@@ -23,7 +23,7 @@ child_proc(int conn)
 	pid_t child_pid;
 	int result = 0;
 	char outputbuf[255];
-	
+	int status;
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
 		if (data == 0x0) {
@@ -76,30 +76,35 @@ child_proc(int conn)
 	pipes[1] = open("output.out", O_WRONLY | O_CREAT, 0644);
 	dup2(pipes[1], 1);
 	close(pipes[1]);
-	
+
 	child_pid = fork();
 	if (child_pid == 0) {
 		// child process
+		//pid_t child_pid;
+		//child_pid = getpid();
 		execl("./output", "output", (char *) 0x0);
+		//exit(0);
 	}
 	// keep parent process
 	//execl("./output", "output", (char *) 0x0);
+	else {
+		//child_pid = wait(&status);
+		FILE * opf;
+		opf = fopen("output.out", "r");
+		if(opf == NULL){
+			printf("opf error : not opened!");
+			exit(1);
+		}
+		sleep(1); 
+		fscanf(opf, "%s", outputbuf);
+		fclose(opf);
 
-	FILE * opf;
-	opf = fopen("output.out", "r");
-	if(opf == NULL){
-		printf("opf error : not opened!");
-		exit(1);
+		if ( send(conn, outputbuf, strlen(outputbuf), 0) < 0) {
+			printf("send output back error\n");
+			exit(1);
+		}
+		shutdown(conn, SHUT_WR) ;
 	}
-	sleep(1); 
-	fscanf(opf, "%s", outputbuf);
-	fclose(opf);
-
-	if ( send(conn, outputbuf, strlen(outputbuf), 0) < 0) {
-		printf("send output back error\n");
-		exit(1);
-	}
-	shutdown(conn, SHUT_WR) ;
 }
 
 
