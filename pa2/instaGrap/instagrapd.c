@@ -8,15 +8,13 @@
 #include <string.h> 
 #include <pthread.h>
 
-//char * id = 0x0;
-//char * pw = 0x0;
-//char * codes = 0x0;
+
 char * port = NULL;
 char * wport = NULL;
 char * wip = NULL;
 char ins[10][10] = {0x0, };
 char outs[10][10] = {0x0, };
-//char outputs[10][10] = {0x0, };
+char outputs[10][10] = {0x0, };
 char * ids[20] = {0x0, };
 char * pws[20] = {0x0, };
 char * codes[20] = {0x0, };
@@ -32,15 +30,27 @@ child_proc(void* ptr)
 	char * temp_id = 0x0;
 	char * temp_pw = 0x0;
 	char * temp_code = 0x0;
+	char tempbuf[1024];
 	char * flag = "correct";
 	char * wrong_flag = "reject";
 	int i = 0;
 	struct sockaddr_in waddr;
 	int worker_fd;
+	struct sockaddr_in saddr;
+	int submitter_fd;
 	char temp_codes[1024] = {0x0, };
 	char * wdata ;
 	int k ;
 	int flag2= 0;
+	int right_cnt = 0;
+
+	FILE * compare;
+	compare = fopen("compare.txt", "a");
+	if(compare == NULL) {
+		printf("file open error\n");
+		exit(1);
+	}
+
 	printf("CHILD PROC cnt:  %d\n", cnt);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
@@ -58,8 +68,6 @@ child_proc(void* ptr)
 	bzero(buf, 1024);
 
 	strcat(data, "-");
-	//printf("NEW DATA : %s\n", data);
-	// slice the string by token "-"
 	temp_id = strtok(data, "-");
 	temp_pw = strtok(NULL, "-");
 	temp_code = strtok(NULL, "-");
@@ -154,16 +162,28 @@ child_proc(void* ptr)
 				wdata[len + k] = 0x0 ;
 				len += k ;
 			}
+
+			printf("\nshould be output from worker >%s\n", wdata); 	
+			if( strcmp(wdata, outs[i]) == 0) {
+				printf("correted!\n");
+				right_cnt++;
+			}
+			fprintf(compare, "%s\n", wdata);		
 		}
-		printf("\nshould be output from worker >%s\n", wdata); 	
-		//printf("\nstored output files are >%s\n", outs[i]);
-		//i++;
-		//strcpy(outputs[i], wdata);
-		//i++;
 	}
-	/*for(i = 0; i < 10; i++) {
-		printf("outputs[%d] : %s\n", i, outputs[i]);
-	}*/
+
+	fclose(compare);
+	compare = fopen("compare.txt", "r");
+	for(i = 0; i < 10; i++) {
+		fgets(tempbuf, 10, compare);
+		if( strcmp(tempbuf, outs[i]) == 0) {
+			printf("correct!\n");
+			right_cnt++;
+		}
+	}
+	printf("%d test cases have been passed\n", right_cnt);
+
+
 }
 
 	int 

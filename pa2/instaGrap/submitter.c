@@ -31,6 +31,8 @@ main(int argc, char *argv[])
 	FILE * fs;
 	int i = 0;
 	int fsize = 0;
+	char * grade_buffer = "graded?";
+	char grade_buf[1024] = {0};
 	bzero(sdbuf, 500);
 
 	// getopt
@@ -93,7 +95,7 @@ main(int argc, char *argv[])
 			perror("connect failed : ") ;
 			exit(EXIT_FAILURE) ;
 		}
-	
+
 		printf("new connection has been made\n");
 		if (i == 0) {
 			//printf("sending all-concat id-pw-codes test\n");
@@ -105,7 +107,7 @@ main(int argc, char *argv[])
 			printf("sent info with : %s\n", new_buffer);
 		}
 		else  {
-		//	if (i == 5) break;
+			//	if (i == 5) break;
 			if ( send(sock_fd, new_buffer, strlen(new_buffer), 0) < 0) {
 				printf("requesting error\n");
 				exit(0);
@@ -117,7 +119,6 @@ main(int argc, char *argv[])
 				printf("recved feedback : %s\n", buf);
 				if ( strcmp(buf, "correct") == 0) {
 					printf("logged in\n");
-					break;
 				}
 				else {
 					printf("rejected\n");

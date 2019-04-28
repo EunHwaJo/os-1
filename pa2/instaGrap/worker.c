@@ -89,13 +89,13 @@ child_proc(int conn)
 	//execl("./output", "output", (char *) 0x0);
 	else {
 		//child_pid = wait(&status);
+		sleep(1);
 		FILE * opf;
 		opf = fopen("output.out", "r");
 		if(opf == NULL){
 			printf("opf error : not opened!");
 			exit(1);
 		}
-		sleep(1); 
 		fscanf(opf, "%s", outputbuf);
 		fclose(opf);
 
@@ -106,19 +106,6 @@ child_proc(int conn)
 		shutdown(conn, SHUT_WR) ;
 	}
 }
-
-
-//printf("data: %s\n", data);	
-
-/* get output from executed log
- *data = 0x0;
- FILE * fp2;
- fp2 = fopen("output.txt", "r");
- while( fgets(buf, 1023, fp2) > 0 ) {
- strcat(data, buf);
- }
- printf("%s\n", data);
- */
 
 
 	int
@@ -136,7 +123,7 @@ main(int argc, char *argv[])
 	//getopt
 	while( (c = getopt(argc, argv, "p:")) != -1) {
 		switch(c) {
-			case 'p' : // port coming from
+			case 'p' : 
 				port = optarg; 
 		}
 	}

@@ -10,5 +10,5 @@ worker : worker.c
 	gcc -o worker worker.c
 
 clean:
-	rm -rf worker submitter instagrapd output.c output.out output testcase.txt
+	rm -rf worker submitter instagrapd output.c output.out output testcase.txt compare.txt
 
