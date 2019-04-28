@@ -1,7 +1,7 @@
 all: worker instagrapd submitter
 
 instagrapd : instagrapd.c
-	gcc -o instagrapd instagrapd.c
+	gcc -o instagrapd -pthread instagrapd.c
 
 submitter : submitter.c
 	gcc -o submitter submitter.c

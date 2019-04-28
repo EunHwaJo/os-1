@@ -153,31 +153,29 @@ main(int argc, char const *argv[])
 			printf("sending all-concat id-pw-codes test\n");
 			if( send(sock_fd, new_buffer, strlen(new_buffer), 0) < 0) {
 				printf("sending error\n");
-				exit(1);
+				exit(0);
 			}
 			i++;
 		}
-/*
-		if (i > 0) {
-			printf("waiting for feedback..\n");
-			if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
-				printf("requesting error\n");
-			}
-			printf("requesting again.. pw : %s\n", pw);
+		/*
+		   if (i > 0) {
+		   printf("waiting for feedback..\n");
+		   if ( send(sock_fd, pw, strlen(pw), 0) < 0) {
+		   printf("requesting error\n");
+		   }
+		   printf("requesting again.. pw : %s\n", pw);
 
-			if ( s = recv(sock_fd, buf, 10, 0) > 0) {
-				printf("recved feedback : %s\n", buf);
-				if ( strcmp(buf, "correct") == 0) break;
-				else continue;
-			}
-		}
-*/
+		   if ( s = recv(sock_fd, buf, 10, 0) > 0) {
+		   printf("recved feedback : %s\n", buf);
+		   if ( strcmp(buf, "correct") == 0) break;
+		   else continue;
+		   }
+		   }
+		 */
 		printf("i is %d\n", i);
-		//i++;
-		if (i > 0) {
-			shutdown(sock_fd, SHUT_WR);
-			break;
-		}
+		i++;
+		shutdown(sock_fd, SHUT_WR);
+		break;
 	}
 	/*
 	   while((fsize = fread(sdbuf, sizeof(char), 500, fs)) > 0) {

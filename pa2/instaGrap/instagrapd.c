@@ -1,11 +1,12 @@
 // Partly taken from https://www.geeksforgeeks.org/socket-programming-cc/
-
+#include <arpa/inet.h>
 #include <unistd.h> 
 #include <stdio.h> 
 #include <sys/socket.h> 
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
+#include <pthread.h>
 
 //char * id = 0x0;
 //char * pw = 0x0;
@@ -20,9 +21,10 @@ char * codes[20] = {0x0, };
 int flags[20] = {0, };		// to decide weather incoming data iss id, pw, or code
 int cnt = 0;			// for multiple submitter sharing ids/pws/codes array
 
-	void
-child_proc(int conn)
-{	
+	void*
+child_proc(void* ptr)
+{	int conn = *((int *) ptr);
+	//free(ptr);
 	// conn is socket
 	char buf[1024] ;
 	char * data = 0x0, * orig = 0x0 ;
@@ -40,7 +42,8 @@ child_proc(int conn)
 	// address for worker
 	struct sockaddr_in waddr;
 	int worker_fd;
-	printf("CHILD PROC\n");
+	printf("CHILD PROC cnt:  %d\n", cnt);
+	printf("conn : %d\n", conn);
 	while( (s = recv(conn, buf, 1023, 0)) > 0) {
 		buf[s] = 0x0;
 		if (data == 0x0) {
@@ -57,49 +60,48 @@ child_proc(int conn)
 	strcat(data, "-");
 	printf("NEW DATA : %s\n", data);
 	// slice the string by token "-"
-	ids[0] = strtok(data, "-");
-	pws[0] = strtok(NULL, "-");
-	printf("data now is : %s\n", data);
-	codes[0] = strtok(NULL, "-");
-	printf("id : %s\npw : %s\ncodes : \n%s", ids[0], pws[0], codes[0]);
+	ids[cnt] = strtok(data, "-");
+	pws[cnt] = strtok(NULL, "-");
+	codes[cnt] = strtok(NULL, "-");
+	printf("ids[%d] : %s\npws[%d] : %s\ncodes[%d] : \n%s", cnt, ids[cnt], cnt, pws[cnt], cnt, codes[cnt]);
 	shutdown(conn, SHUT_WR);
 
-/*
-	worker_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(worker_fd <= 0) {
-		perror("worker socket failed : ");
-		exit(EXIT_FAILURE);
-	}
+	/*
+	   worker_fd = socket(AF_INET, SOCK_STREAM, 0);
+	   if(worker_fd <= 0) {
+	   perror("worker socket failed : ");
+	   exit(EXIT_FAILURE);
+	   }
 
 	// write data to worker
 	memset(&waddr, '0', sizeof(waddr));
 	waddr.sin_family=AF_INET;
 	waddr.sin_port = htons(atoi(wport));
 	if(inet_pton(AF_INET, wip, &waddr.sin_addr) <= 0 ){
-		perror("inet_pton failed : ");
-		exit(EXIT_FAILURE);
+	perror("inet_pton failed : ");
+	exit(EXIT_FAILURE);
 	}
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
-		perror("connect failed : ");
-		exit(EXIT_FAILURE);
+	perror("connect failed : ");
+	exit(EXIT_FAILURE);
 	}
 	// try token..
 	char temp_codes[1023] = {0x0, };
 
 	if(connect(worker_fd, (struct sockaddr *) &waddr, sizeof(waddr)) < 0) {
-		for(i = 0; i < 10; i++) {
-			sleep(3);
-			strcpy(temp_codes, codes[0]);
-			strcat(temp_codes, "|");
-			strcat(temp_codes, ins[i]);
-			if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
-				printf("concat code sending error\n");
-			}
-			else printf("concat code sent : %s\n", temp_codes);
-		}
+	for(i = 0; i < 10; i++) {
+	sleep(3);
+	strcpy(temp_codes, codes[0]);
+	strcat(temp_codes, "|");
+	strcat(temp_codes, ins[i]);
+	if ( send(worker_fd, temp_codes, strlen(temp_codes), 0 ) < 0) {
+	printf("concat code sending error\n");
 	}
-		//shutdown(worker_fd, SHUT_WR) ;
-*/
+	else printf("concat code sent : %s\n", temp_codes);
+	}
+	}
+	//shutdown(worker_fd, SHUT_WR) ;
+	 */
 }
 
 	int 
@@ -205,15 +207,27 @@ main(int argc, char const *argv[])
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		} 
-
-		if (fork() > 0) {
-			// reference to the socket is also copied to child
-			printf("new socket\n");	
-			child_proc(new_socket) ;
+		/*
+		   if (fork() > 0) {
+		// reference to the socket is also copied to child
+		printf("new socket\n");	
+		child_proc(new_socket) ;
 		}
-		else {
-			printf("close new socket\n");
-			close(new_socket) ;
+		 */
+		// try multi thread
+		//int * new_fd = malloc(sizeof(*new_fd));
+		//new_fd = new_socket;
+		pthread_t t1;
+		printf("new_ socket : %d\n", new_socket);
+		if ( pthread_create(&t1, NULL, child_proc,(void*) &new_socket) < 0) {
+			perror("thread create error!");
+			exit(0);
+		} else { 
+			cnt++;
 		}
+		/*else {
+		printf("close new socket\n");
+		close(new_socket) ;
+		}*/
 	}
 }
