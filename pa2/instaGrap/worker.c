@@ -1,3 +1,5 @@
+#include <sys/time.h>
+#include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -9,6 +11,12 @@
 #include <fcntl.h>
 
 int pipes[2];
+
+void
+handler(int sig)
+{
+	system("echo 'timeout' >> timeout ") ;
+}
 
 	void
 child_proc(int conn)
@@ -82,6 +90,14 @@ child_proc(int conn)
 		// child process
 		//pid_t child_pid;
 		//child_pid = getpid();
+		struct itimerval t ;
+		signal(SIGALRM, handler) ;
+
+		t.it_value.tv_sec = 3 ;
+		//t.it_value.tv_usec = 100000 ; // 1.1 sec
+		t.it_interval = t.it_value ;
+		setitimer(ITIMER_REAL, &t, 0x0) ;
+		
 		execl("./output", "output", (char *) 0x0);
 		//exit(0);
 	}

@@ -24,8 +24,8 @@ main(int argc, char *argv[])
 	char * port = NULL;
 	char * pw = NULL;
 	char filename[20];
-	char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
-	//char path[100] = "/home/s21700696/os-1/pa2/instaGrap/";
+	//char path[100] = "/home/sihyungyou/os/pa2/instaGrap/";
+	char path[100] = "/home/s21700696/os-1/pa2/instaGrap/";
 	char buf[1024] = {0x0, };
 	char sdbuf[500];
 	FILE * fs;
@@ -119,6 +119,7 @@ main(int argc, char *argv[])
 				printf("recved feedback : %s\n", buf);
 				if ( strcmp(buf, "correct") == 0) {
 					printf("logged in\n");
+					break;
 				}
 				else {
 					printf("rejected\n");
@@ -130,5 +131,68 @@ main(int argc, char *argv[])
 		i++;
 	}
 
-} 
+
+	char check_buffer[32] ;
+	char check_in_buffer[1024] ;
+
+	sprintf(check_buffer, "%s", "check");
+
+	while(1) {
+		sock_fd = socket(AF_INET, SOCK_STREAM, 0) ;
+		if (sock_fd <= 0) {
+			perror("socket failed : ") ;
+			exit(EXIT_FAILURE) ;
+		} 
+
+		memset(&serv_addr, '0', sizeof(serv_addr)); 
+		serv_addr.sin_family = AF_INET; 
+		serv_addr.sin_port = htons(atoi(port));
+
+		if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+			perror("inet_pton failed : ") ; 
+			exit(EXIT_FAILURE) ;
+		} 
+		if (connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+			perror("connect failed : ") ;
+			exit(EXIT_FAILURE) ;
+		}
+
+
+			if( send(sock_fd,check_buffer , strlen(new_buffer), 0) < 0) {
+				printf("sending error\n");
+				exit(0);
+		}
+
+			shutdown(sock_fd, SHUT_WR);
+			
+			if ( s = recv(sock_fd, check_in_buffer, 10, 0) > 0) {
+				
+				printf("%s\n",check_in_buffer) ;
+			}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
