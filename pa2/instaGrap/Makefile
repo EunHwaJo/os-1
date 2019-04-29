@@ -10,5 +10,9 @@ worker : worker.c
 	gcc -o worker worker.c
 
 clean:
+<<<<<<< HEAD
 	rm -rf worker submitter instagrapd output.c output.out testcase.txt output
+=======
+	rm -rf worker submitter instagrapd output.c output.out output testcase.txt compare.txt
+>>>>>>> upstream/submitter_fix
 
